@@ -20,10 +20,9 @@ class ReportController extends Controller
         if ($period == 'daily') {
             $query->whereDate('created_at', today());
         } elseif ($period == 'weekly') {
-            $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+            $query->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
         } elseif ($period == 'monthly') {
-            $query->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year);
+            $query->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()]);
         } elseif ($period == 'yearly') {
             $query->whereYear('created_at', now()->year);
         }
@@ -39,8 +38,8 @@ class ReportController extends Controller
             DB::raw('SUM(quantity * selling_price) as total_selling_value') // Nilai Jual (jika keluar)
         )
             ->when($period == 'daily', fn($q) => $q->whereDate('created_at', today()))
-            ->when($period == 'weekly', fn($q) => $q->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]))
-            ->when($period == 'monthly', fn($q) => $q->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year))
+            ->when($period == 'weekly', fn($q) => $q->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]))
+            ->when($period == 'monthly', fn($q) => $q->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()]))
             ->when($period == 'yearly', fn($q) => $q->whereYear('created_at', now()->year))
             ->groupBy('type')
             ->get()

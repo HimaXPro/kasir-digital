@@ -3,7 +3,8 @@
 @section('breadcrumb', 'Laporan & Statistik')
 
 @section('content')
-<div class="page-header d-flex ai-c jb">
+<div class="page-header">
+<div class="page-header-row">
     <div>
         <h1 class="page-title">📊 Laporan & Statistik</h1>
         <p class="page-sub">Timeline pergerakan stok, omzet, dan laba kotor bisnis Anda</p>
@@ -14,6 +15,7 @@
         <button class="period-tab"    data-p="monthly" onclick="setPeriod('monthly',this)">Bulanan</button>
         <button class="period-tab"    data-p="yearly"  onclick="setPeriod('yearly',this)">Tahunan</button>
     </div>
+</div>
 </div>
 
 <!-- Summary Cards -->

@@ -3,7 +3,8 @@
 @section('breadcrumb', 'Dashboard')
 
 @section('content')
-<div class="page-header d-flex ai-c jb">
+<div class="page-header">
+<div class="page-header-row">
     <div>
         <h1 class="page-title">Dashboard</h1>
         <p class="page-sub">Ringkasan aktivitas bisnis hari ini — {{ now()->locale('id')->translatedFormat('l, d F Y') }}</p>
@@ -12,6 +13,7 @@
         <svg style="width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
         Buka Kasir POS
     </a>
+</div>
 </div>
 
 <!-- KPI Cards -->

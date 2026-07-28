@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StockMutation;
 use App\Models\Transaction;
-use App\Models\TransactionDetail;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,25 +22,17 @@ class ReportWebController extends Controller
     {
         $period = $request->get('period', 'daily');
 
-        // ── Query builder helper ─────────────────────────────────────────
-        $applyPeriod = function ($query) use ($period) {
-            return match ($period) {
-                'daily'   => $query->whereDate('created_at', today()),
-                'weekly'  => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]),
-                'monthly' => $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year),
-                'yearly'  => $query->whereYear('created_at', now()->year),
-                default   => $query,
-            };
-        };
+        // ── Hitung range tanggal dengan copy() agar tidak mutasi ──────────
+        [$start, $end] = $this->getDateRange($period);
 
-        // ── Summary Stok ─────────────────────────────────────────────────
+        // ── Summary Stok ──────────────────────────────────────────────────
         $stockSummary = StockMutation::select(
                 'type',
-                DB::raw('SUM(quantity) as total_qty'),
-                DB::raw('SUM(quantity * cost_price) as total_cost'),
-                DB::raw('SUM(quantity * selling_price) as total_sell')
+                DB::raw('COALESCE(SUM(quantity), 0) as total_qty'),
+                DB::raw('COALESCE(SUM(quantity * cost_price), 0) as total_cost'),
+                DB::raw('COALESCE(SUM(quantity * selling_price), 0) as total_sell')
             )
-            ->tap($applyPeriod)
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('type')
             ->get()
             ->keyBy('type');
@@ -48,19 +40,19 @@ class ReportWebController extends Controller
         $stockIn  = $stockSummary->get('in');
         $stockOut = $stockSummary->get('out');
 
-        // ── Summary Transaksi ────────────────────────────────────────────
-        $txSummary = Transaction::tap($applyPeriod)
+        // ── Summary Transaksi ─────────────────────────────────────────────
+        $txSummary = Transaction::whereBetween('created_at', [$start, $end])
             ->selectRaw('COUNT(*) as total_trx, COALESCE(SUM(grand_total), 0) as total_revenue, COALESCE(SUM(discount_amount), 0) as total_discount')
             ->first();
 
         $grossProfit = ($stockOut->total_sell ?? 0) - ($stockOut->total_cost ?? 0);
 
-        // ── Chart: Transaksi per Hari (dalam rentang) ─────────────────────
+        // ── Chart Data ────────────────────────────────────────────────────
         $chartData = $this->buildChartData($period);
 
-        // ── Timeline Mutasi Stok ─────────────────────────────────────────
+        // ── Timeline Mutasi Stok ──────────────────────────────────────────
         $timeline = StockMutation::with('product:id,name,sku')
-            ->tap($applyPeriod)
+            ->whereBetween('created_at', [$start, $end])
             ->latest()
             ->limit(50)
             ->get()
@@ -68,53 +60,91 @@ class ReportWebController extends Controller
                 'id'             => $m->id,
                 'type'           => $m->type,
                 'product_name'   => $m->product->name ?? '—',
-                'product_sku'    => $m->product->sku ?? '—',
+                'product_sku'    => $m->product->sku  ?? '—',
                 'quantity'       => $m->quantity,
                 'cost_price'     => (float) $m->cost_price,
                 'selling_price'  => (float) $m->selling_price,
                 'total_cost'     => (float) ($m->cost_price * $m->quantity),
                 'reference_type' => $m->reference_type,
                 'notes'          => $m->notes,
-                'date'           => $m->created_at->format('d M Y H:i'),
+                'date'           => $m->created_at->format('d M Y H:i') . ' WIB',
             ]);
 
         return response()->json([
             'summary' => [
-                'stock_in'    => ['qty' => $stockIn->total_qty ?? 0,  'cost' => $stockIn->total_cost ?? 0],
-                'stock_out'   => ['qty' => $stockOut->total_qty ?? 0, 'cost' => $stockOut->total_cost ?? 0, 'revenue' => $stockOut->total_sell ?? 0],
-                'total_trx'   => $txSummary->total_trx ?? 0,
-                'revenue'     => $txSummary->total_revenue ?? 0,
-                'gross_profit'=> $grossProfit,
-                'discount'    => $txSummary->total_discount ?? 0,
+                'stock_in'     => ['qty' => (int)($stockIn->total_qty  ?? 0), 'cost' => (float)($stockIn->total_cost  ?? 0)],
+                'stock_out'    => ['qty' => (int)($stockOut->total_qty ?? 0), 'cost' => (float)($stockOut->total_cost ?? 0), 'revenue' => (float)($stockOut->total_sell ?? 0)],
+                'total_trx'    => (int)($txSummary->total_trx     ?? 0),
+                'revenue'      => (float)($txSummary->total_revenue ?? 0),
+                'gross_profit' => (float) $grossProfit,
+                'discount'     => (float)($txSummary->total_discount ?? 0),
             ],
             'chart'    => $chartData,
             'timeline' => $timeline,
         ]);
     }
 
+    /**
+     * Kembalikan [start, end] Carbon tanpa mutasi satu sama lain.
+     * Selalu gunakan copy() agar tiap operasi independen.
+     */
+    private function getDateRange(string $period): array
+    {
+        $now = Carbon::now();   // satu referensi waktu yang konsisten
+
+        return match ($period) {
+            'daily'   => [
+                $now->copy()->startOfDay(),
+                $now->copy()->endOfDay(),
+            ],
+            'weekly'  => [
+                $now->copy()->subDays(6)->startOfDay(),
+                $now->copy()->endOfDay(),
+            ],
+            'monthly' => [
+                $now->copy()->subDays(29)->startOfDay(),
+                $now->copy()->endOfDay(),
+            ],
+            'yearly'  => [
+                $now->copy()->startOfYear()->startOfDay(),
+                $now->copy()->endOfYear()->endOfDay(),
+            ],
+            default   => [
+                $now->copy()->subDays(30)->startOfDay(),
+                $now->copy()->endOfDay(),
+            ],
+        };
+    }
+
     private function buildChartData(string $period): array
     {
-        $days = match ($period) {
-            'daily'   => 1,
-            'weekly'  => 7,
-            'monthly' => (int) now()->daysInMonth,
-            'yearly'  => 12,
-            default   => 7,
-        };
+        $now = Carbon::now();   // satu referensi, copy() untuk setiap kalkulasi
 
         if ($period === 'yearly') {
-            return collect(range(1, 12))->map(function ($m) {
-                $label   = now()->setMonth($m)->format('M');
-                $revenue = Transaction::whereMonth('created_at', $m)->whereYear('created_at', now()->year)->sum('grand_total');
-                $inQty   = StockMutation::where('type', 'in')->whereMonth('created_at', $m)->whereYear('created_at', now()->year)->sum('quantity');
-                $outQty  = StockMutation::where('type', 'out')->whereMonth('created_at', $m)->whereYear('created_at', now()->year)->sum('quantity');
+            return collect(range(1, 12))->map(function ($m) use ($now) {
+                // copy() agar now tidak termutasi oleh setMonth()
+                $label   = $now->copy()->setMonth($m)->format('M');
+                $year    = $now->year;
+                $revenue = Transaction::whereMonth('created_at', $m)->whereYear('created_at', $year)->sum('grand_total');
+                $inQty   = StockMutation::where('type', 'in')->whereMonth('created_at', $m)->whereYear('created_at', $year)->sum('quantity');
+                $outQty  = StockMutation::where('type', 'out')->whereMonth('created_at', $m)->whereYear('created_at', $year)->sum('quantity');
+
                 return ['label' => $label, 'revenue' => (float) $revenue, 'in' => (int) $inQty, 'out' => (int) $outQty];
             })->values()->all();
         }
 
-        return collect(range($days - 1, 0))->map(function ($i) use ($period) {
-            $date  = $period === 'daily' ? now() : now()->subDays($i);
-            $label = $period === 'daily' ? now()->format('d M') : $date->format('d M');
+        $days = match ($period) {
+            'daily'   => 1,
+            'weekly'  => 7,
+            'monthly' => 30,
+            default   => 7,
+        };
+
+        return collect(range($days - 1, 0))->map(function ($i) use ($now, $period) {
+            // copy() setiap iterasi agar subDays tidak menumpuk
+            $date  = $now->copy()->subDays($i);
+
+            $label = $period === 'weekly' ? $date->isoFormat('dd d/M') : $date->format('d M');
 
             $revenue = Transaction::whereDate('created_at', $date)->sum('grand_total');
             $inQty   = StockMutation::where('type', 'in')->whereDate('created_at', $date)->sum('quantity');
