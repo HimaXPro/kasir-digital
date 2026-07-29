@@ -15,6 +15,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // ── Kasir POS ────────────────────────────────────────────────────────
 Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+Route::post('/pos/transactions', [\App\Http\Controllers\Api\TransactionController::class, 'store'])->name('pos.transactions');
 
 // ── Produk ────────────────────────────────────────────────────────────
 Route::resource('/products', ProductController::class)->except(['show']);

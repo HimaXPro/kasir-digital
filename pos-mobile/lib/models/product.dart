@@ -26,9 +26,9 @@ class Product {
         categoryId: json['category_id'] as int?,
         name: json['name'] as String,
         sku: json['sku'] as String,
-        costPrice: (json['cost_price'] as num).toDouble(),
-        sellingPrice: (json['selling_price'] as num).toDouble(),
-        stock: (json['stock'] as num).toInt(),
+        costPrice: double.tryParse(json['cost_price'].toString()) ?? 0,
+        sellingPrice: double.tryParse(json['selling_price'].toString()) ?? 0,
+        stock: int.tryParse(json['stock'].toString()) ?? 0,
         category: json['category'] != null
             ? Category.fromJson(json['category'] as Map<String, dynamic>)
             : null,

@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Kasir POS')
-@section('breadcrumb', 'Kasir POS')
+@section('title', 'Kasir')
+@section('breadcrumb', 'Kasir')
 
 @section('content')
 <div class="page-header">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">🛒 Kasir POS</h1>
+            <h1 class="page-title">🛒 Kasir</h1>
             <p class="page-sub">Klik produk untuk menambahkan ke keranjang</p>
         </div>
     </div>
@@ -171,7 +171,7 @@
     .sidebar,.main-wrap .topbar,.bottom-nav,.modal-footer,
     .modal-header button,.page-content>*:not(#printArea){display:none!important}
     #printArea{display:block!important;position:fixed;inset:0;z-index:9999;background:#fff}
-    @page{margin:0;size:80mm auto}
+    @page{margin:0}
 }
 
 /* ── POS mobile tab layout ──────────────────────────────────────── */
@@ -378,9 +378,13 @@ async function processTrx(){
     btn.disabled=true;btn.textContent='⏳ Memproses…';
 
     try{
-        const res=await fetch('/api/transactions',{
+        const res=await fetch('/pos/transactions',{
             method:'POST',
-            headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
+            headers:{
+                'Content-Type':'application/json',
+                'Accept':'application/json',
+                'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content
+            },
             body:JSON.stringify({
                 items:Object.values(cart).map(i=>({product_id:parseInt(i.id),quantity:i.qty})),
                 pay_amount:payAmt,
@@ -465,7 +469,7 @@ function printReceipt(){
 <title>Nota — ${d.invoice_number}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Courier New',Courier,monospace;font-size:12px;color:#000;width:80mm;margin:0 auto;padding:4mm}
+body{font-family:'Courier New',Courier,monospace;font-size:12px;color:#000;width:100%;max-width:80mm;margin:0 auto;padding:4mm}
 .center{text-align:center}.bold{font-weight:bold}.big{font-size:15px}
 .sep{border:none;border-top:1px dashed #000;margin:6px 0}
 table{width:100%;border-collapse:collapse}
@@ -473,8 +477,8 @@ td{padding:1px 0;vertical-align:top}
 .total-row td{font-weight:bold;font-size:14px;padding-top:4px;padding-bottom:4px}
 .footer{text-align:center;font-size:10px;margin-top:8px}
 @media print{
-    @page{margin:0;size:80mm auto}
-    body{width:80mm}
+    @page{margin:0}
+    body{width:100%}
 }
 </style>
 </head>

@@ -338,6 +338,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _drawerItem(IconData icon, IconData activeIcon, String label, int index) {
     final isActive = _selectedIndex == index;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         setState(() => _selectedIndex = index);
         Navigator.pop(context);
@@ -354,18 +355,6 @@ class _MainScreenState extends State<MainScreen> {
         ),
         child: Row(
           children: [
-            if (isActive)
-              Positioned(
-                left: 0,
-                child: Container(
-                  width: 3,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
             Icon(
               isActive ? activeIcon : icon,
               color: isActive ? AppTheme.sidebarActive : AppTheme.sidebarTextH,
@@ -388,6 +377,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _drawerItemNav(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 2),

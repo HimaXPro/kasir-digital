@@ -35,8 +35,8 @@ class Transaction {
         id: json['id'] as int,
         invoiceNumber: json['invoice_number'] as String,
         paymentMethod: json['payment_method'] as String,
-        grandTotal: (json['grand_total'] as num).toDouble(),
-        changeAmount: (json['change_amount'] as num).toDouble(),
+        grandTotal: double.tryParse(json['grand_total'].toString()) ?? 0,
+        changeAmount: double.tryParse(json['change_amount'].toString()) ?? 0,
         createdAt: json['created_at'] as String,
       );
 }

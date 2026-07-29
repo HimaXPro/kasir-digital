@@ -44,11 +44,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         actions: [
           IconButton(
