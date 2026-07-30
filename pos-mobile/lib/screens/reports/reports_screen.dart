@@ -175,7 +175,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
         // Recent Transactions
         _buildCard(
-          title: '🧾 Transaksi Terbaru',
+          title: '🧾 History Transaksi',
           child: recentTrx.isEmpty
               ? Padding(
                   padding: const EdgeInsets.all(24),
@@ -270,9 +270,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           icon: Icons.trending_up_rounded, smallValue: true,
         ),
         _SummaryCard(
-          label: 'Stok Menipis', value: kpi['low_stock'].toString(),
+          label: 'Produk Terjual', value: kpi['items_sold_today'].toString(),
           color: AppTheme.warning, lightColor: AppTheme.warningLight,
-          icon: Icons.warning_amber_outlined,
+          icon: Icons.inventory_2_outlined,
         ),
       ],
     );

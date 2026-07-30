@@ -205,12 +205,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           smallValue: true,
         ),
         _KpiCard(
-          label: 'Stok Menipis',
-          value: kpi['low_stock'].toString(),
-          badge: 'Produk < 10 unit',
+          label: 'Produk Terjual',
+          value: kpi['items_sold_today'].toString(),
+          badge: 'Total Item Terjual',
           color: AppTheme.warning,
           lightColor: AppTheme.warningLight,
-          icon: Icons.warning_amber_outlined,
+          icon: Icons.inventory_2_outlined,
         ),
       ],
     );

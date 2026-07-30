@@ -113,6 +113,36 @@
     </div>
 </div>
 
+<!-- Transaksi History -->
+<div class="card mt-4">
+    <div class="card-header">
+        <span class="card-title">🧾 History Transaksi</span>
+    </div>
+    <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>No. Invoice</th>
+                    <th>Waktu</th>
+                    <th>Metode Bayar</th>
+                    <th class="text-right">Grand Total</th>
+                    <th class="text-right">Kembalian</th>
+                </tr>
+            </thead>
+            <tbody id="trxList">
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state" style="padding:2rem">
+                            <div style="display:inline-flex;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:.75rem"></div>
+                            <div class="empty-title">Memuat data…</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 @push('head')
 <style>
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -222,6 +252,9 @@ async function loadData(period){
 
         // Timeline
         renderTimeline(data.timeline);
+        
+        // Transactions
+        renderTransactions(data.transactions);
 
     } catch(e){
         console.error(e);
@@ -263,6 +296,30 @@ function renderTimeline(items){
                 <div class="tl-cost" style="margin-top:.125rem">${item.date}</div>
             </div>
         </div>`;
+    }).join('');
+}
+
+function renderTransactions(items){
+    const tbody = document.getElementById('trxList');
+    if(!items || !items.length){
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="5">
+                <div class="empty-state" style="padding:2rem"><div class="empty-icon">🧾</div><div class="empty-title">Tidak ada transaksi pada periode ini</div></div>
+            </td>
+        </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = items.map(t => {
+        return `
+        <tr>
+            <td><span class="fw-7 text-primary-c">${t.invoice_number}</span></td>
+            <td class="text-muted fs-sm">${t.date}</td>
+            <td><span class="badge b-secondary">${t.payment_method.toUpperCase()}</span></td>
+            <td class="text-right fw-7">Rp ${new Intl.NumberFormat('id-ID').format(t.grand_total)}</td>
+            <td class="text-right text-muted">Rp ${new Intl.NumberFormat('id-ID').format(t.change_amount)}</td>
+        </tr>`;
     }).join('');
 }
 

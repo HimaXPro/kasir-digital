@@ -45,6 +45,19 @@ class ReportController extends Controller
             ->get()
             ->keyBy('type');
 
+        // 3. History Transaksi
+        $transactionQuery = \App\Models\Transaction::query();
+        if ($period == 'daily') {
+            $transactionQuery->whereDate('created_at', today());
+        } elseif ($period == 'weekly') {
+            $transactionQuery->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
+        } elseif ($period == 'monthly') {
+            $transactionQuery->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()]);
+        } elseif ($period == 'yearly') {
+            $transactionQuery->whereYear('created_at', now()->year);
+        }
+        $transactions = $transactionQuery->latest()->get();
+
         return response()->json([
             'success' => true,
             'period' => $period,
@@ -60,7 +73,8 @@ class ReportController extends Controller
                     'gross_profit' => ($summary['out']->total_selling_value ?? 0) - ($summary['out']->total_cost_value ?? 0), // Laba Kotor
                 ]
             ],
-            'timeline' => $timeline
+            'timeline' => $timeline,
+            'transactions' => $transactions
         ]);
     }
 }

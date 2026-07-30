@@ -19,7 +19,9 @@ class DashboardApiController extends Controller
         // ── KPI Hari Ini ───────────────────────────────────────────────
         $todaySales   = Transaction::whereDate('created_at', today())->count();
         $todayRevenue = (float) Transaction::whereDate('created_at', today())->sum('grand_total');
-        $lowStock     = Product::where('stock', '<', 10)->count();
+        $itemsSoldToday = (int) TransactionDetail::whereHas('transaction', function ($q) {
+            $q->whereDate('transactions.created_at', today());
+        })->sum('quantity');
 
         $todayProfit = (float) (TransactionDetail::whereHas('transaction', function ($q) {
             $q->whereDate('transactions.created_at', today());
@@ -61,10 +63,10 @@ class DashboardApiController extends Controller
             'success' => true,
             'data'    => [
                 'kpi' => [
-                    'today_sales'   => $todaySales,
-                    'today_revenue' => $todayRevenue,
-                    'today_profit'  => $todayProfit,
-                    'low_stock'     => $lowStock,
+                    'today_sales'      => $todaySales,
+                    'today_revenue'    => $todayRevenue,
+                    'today_profit'     => $todayProfit,
+                    'items_sold_today' => $itemsSoldToday,
                 ],
                 'chart_days'          => $chartDays,
                 'top_products'        => $topProducts,
