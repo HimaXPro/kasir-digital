@@ -1,48 +1,48 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'api_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
-  final ApiService _api = ApiService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final result = await _api.post(
-      '/auth/login',
-      {'email': email, 'password': password},
-      auth: false,
-    );
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    final token = result['data']['token'] as String;
-    final user  = result['data']['user'] as Map<String, dynamic>;
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception('Login gagal');
+      }
 
-    await ApiService.setToken(token);
-
-    // Simpan info user
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', user['name'].toString());
-    await prefs.setString('user_email', user['email'].toString());
-
-    return user;
+      return {
+        'uid': user.uid,
+        'email': user.email,
+        'name': user.displayName ?? 'Kasir',
+      };
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw Exception('Email tidak ditemukan.');
+      } else if (e.code == 'wrong-password') {
+        throw Exception('Password salah.');
+      }
+      throw Exception('Login gagal: ${e.message}');
+    }
   }
 
   Future<void> logout() async {
-    try {
-      await _api.post('/auth/logout', {});
-    } catch (_) {
-      // Ignore error saat logout, tetap hapus token lokal
-    }
-    await ApiService.clearToken();
+    await _auth.signOut();
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await ApiService.getToken();
-    return token != null && token.isNotEmpty;
+    return _auth.currentUser != null;
   }
 
   Future<Map<String, String>> getUserInfo() async {
-    final prefs = await SharedPreferences.getInstance();
+    final user = _auth.currentUser;
     return {
-      'name':  prefs.getString('user_name') ?? 'User',
-      'email': prefs.getString('user_email') ?? '',
+      'name': user?.displayName ?? 'Kasir',
+      'email': user?.email ?? '',
     };
   }
 }

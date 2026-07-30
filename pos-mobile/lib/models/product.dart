@@ -1,8 +1,8 @@
 import 'category.dart';
 
 class Product {
-  final int id;
-  final int? categoryId;
+  final String id;
+  final String? categoryId;
   final String name;
   final String sku;
   final double costPrice;
@@ -21,20 +21,18 @@ class Product {
     this.category,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) => Product(
-        id: json['id'] as int,
-        categoryId: json['category_id'] as int?,
-        name: json['name'] as String,
-        sku: json['sku'] as String,
+  factory Product.fromFirestore(Map<String, dynamic> json, String docId, {Category? category}) => Product(
+        id: docId,
+        categoryId: json['category_id'] as String?,
+        name: json['name'] as String? ?? '',
+        sku: json['sku'] as String? ?? '',
         costPrice: double.tryParse(json['cost_price'].toString()) ?? 0,
         sellingPrice: double.tryParse(json['selling_price'].toString()) ?? 0,
         stock: int.tryParse(json['stock'].toString()) ?? 0,
-        category: json['category'] != null
-            ? Category.fromJson(json['category'] as Map<String, dynamic>)
-            : null,
+        category: category,
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toFirestore() => {
         'category_id': categoryId,
         'name': name,
         'sku': sku,
@@ -44,8 +42,8 @@ class Product {
       };
 
   Product copyWith({
-    int? id,
-    int? categoryId,
+    String? id,
+    String? categoryId,
     String? name,
     String? sku,
     double? costPrice,

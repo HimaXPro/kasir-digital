@@ -1,18 +1,15 @@
 class Category {
-  final int id;
+  final String id;
   final String name;
-  final int? productsCount;
 
-  Category({required this.id, required this.name, this.productsCount});
+  Category({required this.id, required this.name});
 
-  factory Category.fromJson(Map<String, dynamic> json) => Category(
-        id: json['id'] as int,
-        name: json['name'] as String,
-        productsCount: json['products_count'] as int?,
+  factory Category.fromFirestore(Map<String, dynamic> json, String docId) => Category(
+        id: docId,
+        name: json['name'] as String? ?? '',
       );
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
+  Map<String, dynamic> toFirestore() => {
         'name': name,
       };
 }
