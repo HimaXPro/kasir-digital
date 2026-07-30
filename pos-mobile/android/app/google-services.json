@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "407220927340",
+    "project_id": "kasir-bhayangkari",
+    "storage_bucket": "kasir-bhayangkari.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407220927340:android:9b7d26d959240445331149",
+        "android_client_info": {
+          "package_name": "com.kasirdigital.pos_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWucqAnt_h0yvLPVLy_dpJ-ddNCSbj00w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
