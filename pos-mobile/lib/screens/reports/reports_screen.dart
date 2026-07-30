@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../models/stock_movement.dart';
+import '../../models/transaction.dart' as tr;
+import '../pos/widgets/receipt_dialog.dart';
+
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -13,10 +20,21 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
+  String _timeline = 'daily';
+
+  String _getTimelineTitle() {
+    switch (_timeline) {
+      case 'daily': return 'Harian';
+      case 'weekly': return 'Mingguan';
+      case 'monthly': return 'Bulanan';
+      case 'yearly': return 'Tahunan';
+      default: return 'Harian';
+    }
+  }
 
   @override
   void initState() {
@@ -27,7 +45,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final result = await _fb.getDashboardStats();
+      final result = await _fb.getDashboardStats(
+        isDashboard: false,
+        timeline: _timeline,
+      );
       setState(() => _data = result);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -46,41 +67,159 @@ class _ReportsScreenState extends State<ReportsScreen> {
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list_rounded),
+            tooltip: 'Pilih Rentang Waktu',
+            onSelected: (val) {
+              setState(() => _timeline = val);
+              _load();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'daily', child: Text('Harian (Hari Ini)')),
+              const PopupMenuItem(value: 'weekly', child: Text('Mingguan (7 Hari)')),
+              const PopupMenuItem(value: 'monthly', child: Text('Bulanan (30 Hari)')),
+              const PopupMenuItem(value: 'yearly', child: Text('Tahunan (365 Hari)')),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _load,
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
-                      const SizedBox(height: 12),
-                      Text('Gagal memuat laporan',
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 6),
-                      Text(_error!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _load,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Coba Lagi'),
-                      ),
-                    ],
+      body: DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            const TabBar(
+              labelColor: AppTheme.primary,
+              unselectedLabelColor: AppTheme.textSecondary,
+              indicatorColor: AppTheme.primary,
+              tabs: [
+                Tab(text: 'Transaksi'),
+                Tab(text: 'Pergerakan Stok'),
+              ],
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
+                              const SizedBox(height: 12),
+                              Text('Gagal memuat laporan',
+                                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text(_error!,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _load,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Coba Lagi'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : TabBarView(
+                          children: [
+                            RefreshIndicator(
+                              onRefresh: _load,
+                              color: AppTheme.primary,
+                              child: _buildContent(),
+                            ),
+                            _buildStockMovementsTab(),
+                          ],
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStockMovementsTab() {
+    return StreamBuilder<List<StockMovement>>(
+      stream: _fb.streamStockMovements(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+        }
+        final movements = snapshot.data ?? [];
+        if (movements.isEmpty) {
+          return Center(
+            child: Text('Belum ada riwayat pergerakan stok',
+                style: GoogleFonts.inter(color: AppTheme.textSecondary)),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: movements.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (ctx, i) {
+            final m = movements[i];
+            final isOut = m.type == 'OUT';
+            final color = isOut ? AppTheme.danger : AppTheme.success;
+            final icon = isOut ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+            final sign = isOut ? '-' : '+';
+            
+            String dateStr = m.createdAt;
+            try {
+              final dt = DateTime.parse(m.createdAt);
+              dateStr = DateFormat('dd MMM yyyy, HH:mm').format(dt);
+            } catch (_) {}
+
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+                boxShadow: const [AppTheme.shadowSm],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: color, size: 20),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppTheme.primary,
-                  child: _buildContent(),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(m.productName,
+                            style: GoogleFonts.inter(
+                                fontSize: 13, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 2),
+                        Text(m.note,
+                            style: GoogleFonts.inter(
+                                fontSize: 12, color: AppTheme.textSecondary)),
+                        const SizedBox(height: 2),
+                        Text(dateStr,
+                            style: GoogleFonts.inter(
+                                fontSize: 10, color: AppTheme.textMuted)),
+                      ],
+                    ),
+                  ),
+                  Text('$sign${m.quantity}',
+                      style: GoogleFonts.inter(
+                          fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -94,7 +233,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         // Today Summary
-        Text('📈 Ringkasan Hari Ini',
+        Text('📈 Laporan Transaksi ${_getTimelineTitle()}',
             style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         _buildSummaryGrid(kpi),
@@ -102,7 +241,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
         // Revenue Chart
         _buildCard(
-          title: '📊 Omzet 7 Hari Terakhir',
+          title: '📊 Omzet ${_getTimelineTitle()}',
           child: SizedBox(
             height: 180,
             child: _buildBarChart(chartDays),
@@ -184,59 +323,102 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 )
               : Column(
-                  children: recentTrx.map((trx) {
-                    final t = trx as Map<String, dynamic>;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryLight,
-                              borderRadius: BorderRadius.circular(10),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: () {
+                    List<Widget> trxListWidgets = [];
+                    String? currentMonthStr;
+                    
+                    for (var trx in recentTrx) {
+                      final t = trx as tr.Transaction;
+                      String dateStr = t.createdAt;
+                      String monthHeader = '';
+                      try {
+                        final dt = DateTime.parse(t.createdAt);
+                        dateStr = DateFormat('dd/MM/yyyy HH:mm').format(dt);
+                        monthHeader = DateFormat('MMMM yyyy').format(dt);
+                      } catch (_) {}
+
+                      if (monthHeader.isNotEmpty && monthHeader != currentMonthStr) {
+                        trxListWidgets.add(
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12, bottom: 4),
+                            child: Text(
+                              monthHeader.toUpperCase(),
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted),
                             ),
-                            child: const Icon(Icons.receipt_long_outlined,
-                                color: AppTheme.primary, size: 18),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        );
+                        currentMonthStr = monthHeader;
+                      }
+
+                      trxListWidgets.add(
+                        InkWell(
+                          onTap: () {
+                            final user = context.read<AuthProvider>().currentUser;
+                            showDialog(
+                              context: context,
+                              builder: (_) => ReceiptDialog(
+                                transaction: t,
+                                storeName: 'KASIR DIGITAL',
+                                location: '${user?.cityId} - ${user?.provinceId}'.toUpperCase(),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
                               children: [
-                                Text(t['invoice_number'] as String,
-                                    style: GoogleFonts.inter(
-                                        fontSize: 13, fontWeight: FontWeight.w700,
-                                        color: AppTheme.primary)),
-                                Text(t['created_at'] as String,
-                                    style: GoogleFonts.inter(
-                                        fontSize: 11, color: AppTheme.textMuted)),
+                                Container(
+                                  width: 40, height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.receipt_long_outlined,
+                                      color: AppTheme.primary, size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(t.invoiceNumber,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 13, fontWeight: FontWeight.w700,
+                                              color: AppTheme.primary)),
+                                      Text(dateStr,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 11, color: AppTheme.textMuted)),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(formatRupiah(t.grandTotal),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 13, fontWeight: FontWeight.w700)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(t.paymentMethod,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 10, fontWeight: FontWeight.w600,
+                                              color: AppTheme.textSecondary)),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(formatRupiah(t['grand_total'] as num),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 13, fontWeight: FontWeight.w700)),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(t['payment_method'] as String,
-                                    style: GoogleFonts.inter(
-                                        fontSize: 10, fontWeight: FontWeight.w600,
-                                        color: AppTheme.textSecondary)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                        ),
+                      );
+                    }
+                    return trxListWidgets;
+                  }(),
                 ),
         ),
         const SizedBox(height: 80),

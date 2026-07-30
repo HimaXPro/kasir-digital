@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'core/providers/auth_provider.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 
@@ -22,5 +24,10 @@ void main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  runApp(const KasirDigitalApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: const KasirDigitalApp(),
+    ),
+  );
 }

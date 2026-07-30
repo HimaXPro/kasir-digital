@@ -2,21 +2,25 @@ class CartItem {
   final String productId;
   final String productName;
   final double price;
+  final double costPrice;
   int quantity;
 
   CartItem({
     required this.productId,
     required this.productName,
     required this.price,
+    this.costPrice = 0,
     this.quantity = 1,
   });
 
   double get subtotal => price * quantity;
+  double get totalCost => costPrice * quantity;
 
   Map<String, dynamic> toFirestore() => {
         'product_id': productId,
         'product_name': productName,
         'price': price,
+        'cost_price': costPrice,
         'quantity': quantity,
       };
 
@@ -24,6 +28,7 @@ class CartItem {
         productId: json['product_id'] as String,
         productName: json['product_name'] as String,
         price: double.tryParse(json['price'].toString()) ?? 0,
+        costPrice: double.tryParse(json['cost_price']?.toString() ?? '0') ?? 0,
         quantity: json['quantity'] as int? ?? 1,
       );
 }

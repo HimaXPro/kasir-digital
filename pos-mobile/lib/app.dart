@@ -7,6 +7,9 @@ import 'screens/main/main_screen.dart';
 import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/admin_main_screen.dart';
 
+import 'package:provider/provider.dart';
+import 'core/providers/auth_provider.dart';
+
 class KasirDigitalApp extends StatelessWidget {
   const KasirDigitalApp({super.key});
 
@@ -21,29 +24,14 @@ class KasirDigitalApp extends StatelessWidget {
   }
 }
 
-class _AppEntry extends StatefulWidget {
+class _AppEntry extends StatelessWidget {
   const _AppEntry();
 
   @override
-  State<_AppEntry> createState() => _AppEntryState();
-}
-
-class _AppEntryState extends State<_AppEntry> {
-  final _authService = AuthService();
-  late Future<bool> _checkLogin;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkLogin = _authService.isLoggedIn();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _checkLogin,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, child) {
+        if (auth.isLoading) {
           return const Scaffold(
             backgroundColor: Color(0xFF4F46E5),
             body: Center(
@@ -68,8 +56,14 @@ class _AppEntryState extends State<_AppEntry> {
             ),
           );
         }
-        final isLoggedIn = snapshot.data ?? false;
-        return isLoggedIn ? const MainScreen() : const LoginScreen();
+        
+        final isLoggedIn = auth.isLoggedIn;
+        
+        if (kIsWeb) {
+          return isLoggedIn ? const AdminMainScreen() : const AdminLoginScreen();
+        } else {
+          return isLoggedIn ? const MainScreen() : const LoginScreen();
+        }
       },
     );
   }

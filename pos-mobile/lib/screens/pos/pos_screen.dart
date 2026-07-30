@@ -9,6 +9,12 @@ import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../models/transaction.dart' as tr;
 
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/services/payment_service.dart';
+import 'widgets/receipt_dialog.dart';
+import 'widgets/qris_dialog.dart';
+
 class PosScreen extends StatefulWidget {
   const PosScreen({super.key});
 
@@ -17,7 +23,7 @@ class PosScreen extends StatefulWidget {
 }
 
 class _PosScreenState extends State<PosScreen> {
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   List<tr.CartItem> _cart = [];
   String _search = '';
   String? _selectedCatId;
@@ -55,6 +61,7 @@ class _PosScreenState extends State<PosScreen> {
           productId: product.id,
           productName: product.name,
           price: product.sellingPrice,
+          costPrice: product.costPrice,
         ));
       }
     });
@@ -133,15 +140,51 @@ class _PosScreenState extends State<PosScreen> {
         items: List.from(_cart),
       );
 
-      await _fb.addTransaction(transaction);
-
+      final addedTrx = await _fb.addTransaction(transaction);
+      
       final trxData = transaction.toFirestore();
-      trxData['id'] = transaction.id;
+      trxData['id'] = addedTrx.id;
+      
+      if (method == 'qris') {
+        if (!mounted) return;
+        // Tampilkan loading dialog atau ubah state
+        final paymentService = PaymentService();
+        final qrisResult = await paymentService.generateQris(
+          transactionId: addedTrx.id,
+          amount: _subtotal - discount,
+          items: _cart.map((e) => {
+            'product_name': e.productName,
+            'quantity': e.quantity,
+            'price': e.price,
+          }).toList(),
+        );
+
+        if (qrisResult['success'] == true) {
+          if (!mounted) return;
+          final bool? isPaid = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => QrisDialog(
+              transactionId: addedTrx.id,
+              qrString: qrisResult['qrString'],
+              amount: _subtotal - discount,
+              fbService: _fb,
+            ),
+          );
+
+          if (isPaid != true) {
+            // Jika dibatalkan atau gagal, jangan lanjutkan cetak
+            return;
+          }
+        } else {
+          throw Exception('Gagal mendapatkan QR Code dari server');
+        }
+      }
 
       setState(() => _cart = []);
 
       if (!mounted) return;
-      _showSuccessDialog(trxData);
+      _showSuccessDialog(transaction, trxData);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,7 +193,7 @@ class _PosScreenState extends State<PosScreen> {
     }
   }
 
-  void _showSuccessDialog(Map<String, dynamic> trxData) {
+  void _showSuccessDialog(tr.Transaction transaction, Map<String, dynamic> trxData) {
     final invoice = trxData['invoice_number'] as String;
     final change = double.tryParse(trxData['change_amount'].toString()) ?? 0;
     
@@ -209,17 +252,19 @@ class _PosScreenState extends State<PosScreen> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    try {
-                      await PrintService().printReceipt(trxData);
-                    } catch (e) {
-                      if (!ctx.mounted) return;
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
-                      );
-                    }
+                    Navigator.pop(ctx);
+                    final user = context.read<AuthProvider>().currentUser;
+                    showDialog(
+                      context: context,
+                      builder: (_) => ReceiptDialog(
+                        transaction: transaction,
+                        storeName: 'KASIR DIGITAL', // Can be fetched from settings if we had them
+                        location: '${user?.cityId} - ${user?.provinceId}'.toUpperCase(),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.print, size: 18),
-                  label: const Text('Cetak Nota'),
+                  icon: const Icon(Icons.receipt_long, size: 18),
+                  label: const Text('Lihat Nota (Struk)'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     foregroundColor: AppTheme.primary,
@@ -854,8 +899,6 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   static const List<Map<String, dynamic>> _methods = [
     {'key': 'cash', 'label': 'Cash', 'icon': Icons.payments_outlined},
     {'key': 'qris', 'label': 'QRIS', 'icon': Icons.qr_code_scanner_rounded},
-    {'key': 'transfer', 'label': 'Transfer', 'icon': Icons.account_balance_outlined},
-    {'key': 'debit', 'label': 'Debit', 'icon': Icons.credit_card_outlined},
   ];
 
   void _setExact() {

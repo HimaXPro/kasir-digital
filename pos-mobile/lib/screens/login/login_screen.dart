@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../main/main_screen.dart';
@@ -16,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _authService = AuthService();
   bool _loading = false;
   bool _obscure = true;
   String? _errorMsg;
@@ -54,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen>
       _errorMsg = null;
     });
     try {
-      await _authService.login(_emailCtrl.text.trim(), _passCtrl.text);
+      await context.read<AuthProvider>().login(_emailCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -65,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
       );
     } catch (e) {
-      setState(() => _errorMsg = e.toString());
+      setState(() => _errorMsg = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

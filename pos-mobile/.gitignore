@@ -46,3 +46,4 @@ app.*.map.json
 
 #jangan di push ke github
 lib/firebase_options.dart
+create_user.dart

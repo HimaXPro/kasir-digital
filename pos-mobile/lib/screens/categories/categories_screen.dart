@@ -4,6 +4,9 @@ import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/category.dart';
 
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
+
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
 
@@ -12,7 +15,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
 
   void _showForm({Category? category}) {
     final nameCtrl = TextEditingController(text: category?.name);

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../models/transaction.dart' as tr;
+
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,7 +18,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
@@ -236,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const Text('📊', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
               Text(
-                'Omzet 7 Hari Terakhir',
+                'Omzet 6 Bulan Terakhir',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -345,7 +350,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const Text('🏆', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
               Text(
-                'Produk Terlaris',
+                'Produk Terlaris (Hari Ini)',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -435,7 +440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Text('🧾', style: TextStyle(fontSize: 16)),
                 const SizedBox(width: 6),
                 Text(
-                  'Transaksi Terbaru',
+                  'Transaksi Terbaru (Hari Ini)',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -465,7 +470,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           else
             ...transactions.map((trx) {
-              final t = trx as Map<String, dynamic>;
+              final t = trx as tr.Transaction;
+              String dateStr = t.createdAt;
+              try {
+                final dt = DateTime.parse(t.createdAt);
+                dateStr = DateFormat('dd/MM/yyyy HH:mm').format(dt);
+              } catch (_) {}
+
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: const BoxDecoration(
@@ -478,7 +489,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            t['invoice_number'] as String,
+                            t.invoiceNumber,
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -487,7 +498,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            t['created_at'] as String,
+                            dateStr,
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               color: AppTheme.textMuted,
@@ -500,7 +511,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          formatRupiah(t['grand_total'] as num),
+                          formatRupiah(t.grandTotal),
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -515,7 +526,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            t['payment_method'] as String,
+                            t.paymentMethod,
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

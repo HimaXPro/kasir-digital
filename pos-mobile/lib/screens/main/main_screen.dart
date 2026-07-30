@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../login/login_screen.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -19,23 +20,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  final _authService = AuthService();
 
-  final List<_NavItem> _navItems = const [
-    _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard'),
-    _NavItem(icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale, label: 'Kasir'),
-    _NavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: 'Produk'),
-    _NavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Laporan'),
-  ];
-
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    PosScreen(),
-    ProductsScreen(),
-    ReportsScreen(),
-  ];
-
-  Future<void> _logout() async {
+  Future<void> _logout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -63,8 +49,8 @@ class _MainScreenState extends State<MainScreen> {
     );
 
     if (confirm == true) {
-      await _authService.logout();
       if (!mounted) return;
+      await context.read<AuthProvider>().logout();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const LoginScreen(),
@@ -78,17 +64,50 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    // Generate allowed screens and nav items dynamically based on role
+    final List<Widget> screens = [];
+    final List<_NavItem> navItems = [];
+    
+    // 1. Dashboard (Owner only)
+    if (user.isOwner) {
+      screens.add(const DashboardScreen());
+      navItems.add(const _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard'));
+    }
+    
+    // 2. POS (All roles)
+    screens.add(const PosScreen());
+    navItems.add(const _NavItem(icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale, label: 'Kasir'));
+
+    // 3. Products (Manager & Owner)
+    if (user.isManager || user.isOwner) {
+      screens.add(const ProductsScreen());
+      navItems.add(const _NavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: 'Produk'));
+    }
+
+    // 4. Reports (Owner only)
+    if (user.isOwner) {
+      screens.add(const ReportsScreen());
+      navItems.add(const _NavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Laporan'));
+    }
+
+    if (_selectedIndex >= screens.length) {
+      _selectedIndex = 0;
+    }
+
     return Scaffold(
-      drawer: _buildDrawer(),
+      drawer: _buildDrawer(user, navItems, _selectedIndex),
       body: IndexedStack(
         index: _selectedIndex,
-        children: _screens,
+        children: screens,
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(navItems),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(List<_NavItem> navItems) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -104,8 +123,8 @@ class _MainScreenState extends State<MainScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
-            children: List.generate(_navItems.length, (index) {
-              final item = _navItems[index];
+            children: List.generate(navItems.length, (index) {
+              final item = navItems[index];
               final isActive = _selectedIndex == index;
               return Expanded(
                 child: GestureDetector(
@@ -154,7 +173,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(dynamic user, List<_NavItem> navItems, int currentIndex) {
     return Drawer(
       backgroundColor: AppTheme.sidebarBg,
       child: SafeArea(
@@ -204,7 +223,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       Text(
-                        'Point of Sale',
+                        'Role: ${user.role.toUpperCase()}',
                         style: GoogleFonts.inter(
                           color: AppTheme.sidebarText,
                           fontSize: 11,
@@ -222,22 +241,33 @@ class _MainScreenState extends State<MainScreen> {
                 padding: const EdgeInsets.all(10),
                 children: [
                   _drawerLabel('MENU UTAMA'),
-                  _drawerItem(Icons.dashboard_outlined, Icons.dashboard, 'Dashboard', 0),
-                  _drawerItem(Icons.point_of_sale_outlined, Icons.point_of_sale, 'Kasir POS', 1),
-                  _drawerItem(Icons.inventory_2_outlined, Icons.inventory_2, 'Manajemen Produk', 2),
-                  _drawerItem(Icons.bar_chart_outlined, Icons.bar_chart, 'Laporan', 3),
-                  _drawerLabel('MASTER DATA'),
-                  _drawerItemNav(
-                    Icons.category_outlined,
-                    'Kategori',
-                    () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CategoriesScreen()),
-                      );
-                    },
-                  ),
+                  ...List.generate(navItems.length, (index) {
+                    final item = navItems[index];
+                    final isActive = currentIndex == index;
+                    return _drawerItemNav(
+                      isActive ? item.activeIcon : item.icon,
+                      item.label,
+                      () {
+                        Navigator.pop(context);
+                        setState(() => _selectedIndex = index);
+                      },
+                      isActive: isActive,
+                    );
+                  }),
+                  if (user.isManager || user.isOwner) ...[
+                    _drawerLabel('MASTER DATA'),
+                    _drawerItemNav(
+                      Icons.category_outlined,
+                      'Kategori',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+                        );
+                      },
+                    ),
+                  ],
                   _drawerLabel('PENGATURAN'),
                   _drawerItemNav(
                     Icons.print_outlined,
@@ -262,71 +292,63 @@ class _MainScreenState extends State<MainScreen> {
                   top: BorderSide(color: Colors.white.withAlpha(15)),
                 ),
               ),
-              child: FutureBuilder<Map<String, String>>(
-                future: _authService.getUserInfo(),
-                builder: (ctx, snap) {
-                  final name = snap.data?['name'] ?? 'User';
-                  final email = snap.data?['email'] ?? '';
-                  final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
-                  return Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                      ),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Center(
+                      child: Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.name,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFCBD5E1),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
-                          borderRadius: BorderRadius.circular(50),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: Center(
-                          child: Text(
-                            initial,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                            ),
+                        Text(
+                          '${user.cityId} - ${user.provinceId}',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.sidebarText,
+                            fontSize: 11,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFFCBD5E1),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              email,
-                              style: GoogleFonts.inter(
-                                color: AppTheme.sidebarText,
-                                fontSize: 11,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _logout();
-                        },
-                        icon: const Icon(Icons.logout_rounded,
-                            color: Color(0xFF64748B), size: 18),
-                        tooltip: 'Logout',
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _logout(context);
+                    },
+                    icon: const Icon(Icons.logout_rounded,
+                        color: Color(0xFF64748B), size: 18),
+                    tooltip: 'Logout',
+                  ),
+                ],
               ),
             ),
           ],
@@ -348,47 +370,7 @@ class _MainScreenState extends State<MainScreen> {
         ),
       );
 
-  Widget _drawerItem(IconData icon, IconData activeIcon, String label, int index) {
-    final isActive = _selectedIndex == index;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        setState(() => _selectedIndex = index);
-        Navigator.pop(context);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppTheme.primary.withAlpha(46)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? AppTheme.sidebarActive : AppTheme.sidebarTextH,
-              size: 18,
-            ),
-            const SizedBox(width: 11),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: isActive ? AppTheme.sidebarActive : AppTheme.sidebarTextH,
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerItemNav(IconData icon, String label, VoidCallback onTap) {
+  Widget _drawerItemNav(IconData icon, String label, VoidCallback onTap, {bool isActive = false}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -396,18 +378,19 @@ class _MainScreenState extends State<MainScreen> {
         margin: const EdgeInsets.only(bottom: 2),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
+          color: isActive ? AppTheme.primary.withAlpha(20) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppTheme.sidebarTextH, size: 18),
+            Icon(icon, color: isActive ? AppTheme.primary : AppTheme.sidebarTextH, size: 18),
             const SizedBox(width: 11),
             Text(
               label,
               style: GoogleFonts.inter(
-                color: AppTheme.sidebarTextH,
+                color: isActive ? AppTheme.primary : AppTheme.sidebarTextH,
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

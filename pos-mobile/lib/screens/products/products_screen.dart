@@ -6,6 +6,9 @@ import '../../core/utils/formatters.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
+
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
 
@@ -14,7 +17,7 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   String _search = '';
   String? _filterCatId;
   final _searchCtrl = TextEditingController();
@@ -344,7 +347,7 @@ class ProductFormScreen extends StatefulWidget {
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fb = FirebaseService();
+  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   bool _loading = false;
 
   late final _nameCtrl = TextEditingController(text: widget.product?.name);
