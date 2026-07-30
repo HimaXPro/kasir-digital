@@ -53,13 +53,13 @@
 
     <div class="kpi c-amber">
         <div class="kpi-top">
-            <div class="kpi-label">Stok Menipis</div>
+            <div class="kpi-label">Produk Terjual</div>
             <div class="kpi-icon-wrap c-amber">
-                <svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             </div>
         </div>
-        <div class="kpi-value">{{ $lowStock }}</div>
-        <div class="kpi-badge b-warning">Produk &lt; 10 unit</div>
+        <div class="kpi-value">{{ $itemsSoldToday }}</div>
+        <div class="kpi-badge b-warning">Total Item Terjual Hari Ini</div>
     </div>
 </div>
 

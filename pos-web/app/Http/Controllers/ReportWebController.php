@@ -70,6 +70,20 @@ class ReportWebController extends Controller
                 'date'           => $m->created_at->format('d M Y H:i') . ' WIB',
             ]);
 
+        // ── History Transaksi ─────────────────────────────────────────────
+        $transactions = Transaction::whereBetween('created_at', [$start, $end])
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn ($t) => [
+                'id'             => $t->id,
+                'invoice_number' => $t->invoice_number,
+                'date'           => $t->created_at->format('d M Y H:i') . ' WIB',
+                'payment_method' => $t->payment_method,
+                'grand_total'    => (float) $t->grand_total,
+                'change_amount'  => (float) $t->change_amount,
+            ]);
+
         return response()->json([
             'summary' => [
                 'stock_in'     => ['qty' => (int)($stockIn->total_qty  ?? 0), 'cost' => (float)($stockIn->total_cost  ?? 0)],
@@ -79,8 +93,9 @@ class ReportWebController extends Controller
                 'gross_profit' => (float) $grossProfit,
                 'discount'     => (float)($txSummary->total_discount ?? 0),
             ],
-            'chart'    => $chartData,
-            'timeline' => $timeline,
+            'chart'        => $chartData,
+            'timeline'     => $timeline,
+            'transactions' => $transactions,
         ]);
     }
 

@@ -8,6 +8,7 @@ import '../pos/pos_screen.dart';
 import '../products/products_screen.dart';
 import '../categories/categories_screen.dart';
 import '../reports/reports_screen.dart';
+import '../settings/printer_settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -234,6 +235,18 @@ class _MainScreenState extends State<MainScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+                      );
+                    },
+                  ),
+                  _drawerLabel('PENGATURAN'),
+                  _drawerItemNav(
+                    Icons.print_outlined,
+                    'Pengaturan Printer',
+                    () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PrinterSettingsScreen()),
                       );
                     },
                   ),

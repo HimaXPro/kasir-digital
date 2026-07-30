@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Base URL Laravel backend. Ganti sesuai IP server Anda.
 /// Contoh: 'http://192.168.1.100:8000/api'
 /// Untuk emulator Android (localhost): 'http://10.0.2.2:8000/api'
-const String kBaseUrl = 'http://10.0.2.2:8000/api';
+const String kBaseUrl = 'https://smokiness-catty-wasabi.ngrok-free.dev/api';
 
 class ApiService {
   final String baseUrl;
@@ -35,6 +35,7 @@ class ApiService {
     final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     };
     if (auth) {
       final token = await getToken();
@@ -107,7 +108,8 @@ class ApiService {
 
   // ── Response Handler ────────────────────────────────────────────────
   Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final body =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;

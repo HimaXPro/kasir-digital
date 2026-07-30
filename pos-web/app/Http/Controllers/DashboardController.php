@@ -14,8 +14,9 @@ class DashboardController extends Controller
         // ── KPI Hari Ini ───────────────────────────────────────────────
         $todaySales   = Transaction::whereDate('created_at', today())->count();
         $todayRevenue = Transaction::whereDate('created_at', today())->sum('grand_total');
-        $lowStock     = Product::where('stock', '<', 10)->count();
-
+        $itemsSoldToday = TransactionDetail::whereHas('transaction', function ($q) {
+            $q->whereDate('transactions.created_at', today());
+        })->sum('quantity');
         $todayProfit = TransactionDetail::whereHas('transaction', function ($q) {
             $q->whereDate('transactions.created_at', today());
         })->selectRaw('COALESCE(SUM((selling_price - cost_price) * quantity), 0) as profit')
@@ -42,7 +43,7 @@ class DashboardController extends Controller
         $recentTransactions = Transaction::latest()->limit(8)->get();
 
         return view('dashboard', compact(
-            'todaySales', 'todayRevenue', 'todayProfit', 'lowStock',
+            'todaySales', 'todayRevenue', 'todayProfit', 'itemsSoldToday',
             'chartDays', 'topProducts', 'recentTransactions'
         ));
     }

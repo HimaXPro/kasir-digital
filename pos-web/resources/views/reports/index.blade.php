@@ -148,7 +148,11 @@ async function loadData(period){
     ['kStockIn','kStockOut','kRevenue','kProfit'].forEach(id=>document.getElementById(id).textContent='…');
 
     try{
-        const res=await fetch(`/reports/data?period=${period}`);
+        const res=await fetch(`/reports/data?period=${period}`, {
+            headers: {
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
         const data=await res.json();
         const s=data.summary;
 

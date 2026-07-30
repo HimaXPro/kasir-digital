@@ -174,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisCount: 2,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.35,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
@@ -595,16 +595,19 @@ class _KpiCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: smallValue ? 14 : 22,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-              letterSpacing: -0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: smallValue ? 14 : 22,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+                letterSpacing: -0.5,
+              ),
+              maxLines: 1,
             ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
           ),
           const SizedBox(height: 4),
           Container(

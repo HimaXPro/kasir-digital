@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/services/print_service.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../models/transaction.dart';
@@ -133,8 +134,7 @@ class _PosScreenState extends State<PosScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CartBottomSheet(
-        cart: List.from(_cart),
-        subtotal: _subtotal,
+        cart: _cart,
         onRemove: _removeFromCart,
         onUpdateQty: _updateQty,
         onCheckout: _openPayment,
@@ -179,7 +179,7 @@ class _PosScreenState extends State<PosScreen> {
       _loadData();
 
       if (!mounted) return;
-      _showSuccessDialog(invoiceNo, change);
+      _showSuccessDialog(trxData);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +188,10 @@ class _PosScreenState extends State<PosScreen> {
     }
   }
 
-  void _showSuccessDialog(String invoice, double change) {
+  void _showSuccessDialog(Map<String, dynamic> trxData) {
+    final invoice = trxData['invoice_number'] as String;
+    final change = double.tryParse(trxData['change_amount'].toString()) ?? 0;
+    
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -242,9 +245,35 @@ class _PosScreenState extends State<PosScreen> {
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    try {
+                      await PrintService().printReceipt(trxData);
+                    } catch (e) {
+                      if (!ctx.mounted) return;
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.print, size: 18),
+                  label: const Text('Cetak Nota'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    foregroundColor: AppTheme.primary,
+                    side: const BorderSide(color: AppTheme.primary),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   child: const Text('Transaksi Baru'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
             ],
@@ -585,14 +614,12 @@ class _PosScreenState extends State<PosScreen> {
 // ── Cart Bottom Sheet ──────────────────────────────────────────────────────
 class _CartBottomSheet extends StatefulWidget {
   final List<CartItem> cart;
-  final double subtotal;
   final void Function(int) onRemove;
   final void Function(int, int) onUpdateQty;
   final void Function(double) onCheckout;
 
   const _CartBottomSheet({
     required this.cart,
-    required this.subtotal,
     required this.onRemove,
     required this.onUpdateQty,
     required this.onCheckout,
@@ -606,8 +633,10 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
   double _discount = 0;
   final _discCtrl = TextEditingController(text: '0');
 
+  double get _currentSubtotal => widget.cart.fold(0, (sum, c) => sum + c.subtotal);
+
   double get _total =>
-      (widget.subtotal - _discount).clamp(0, double.infinity);
+      (_currentSubtotal - _discount).clamp(0, double.infinity);
 
   @override
   void dispose() {
@@ -753,7 +782,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                     Text('Subtotal',
                         style: GoogleFonts.inter(
                             color: AppTheme.textSecondary, fontSize: 13)),
-                    Text(formatRupiah(widget.subtotal),
+                    Text(formatRupiah(_currentSubtotal),
                         style: GoogleFonts.inter(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                   ],
