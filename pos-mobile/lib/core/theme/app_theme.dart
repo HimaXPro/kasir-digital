@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // ── Color Palette (matches web app CSS variables) ──────────────────
-  static const Color primary      = Color(0xFF4F46E5); // --primary
-  static const Color primaryDark  = Color(0xFF4338CA); // --primary-dark
-  static const Color primaryLight = Color(0xFFEEF2FF); // --primary-light
+  static const Color primary      = Color(0xFFFA7BC2); // --primary
+  static const Color primaryDark  = Color(0xFFD65BA1); // --primary-dark
+  static const Color primaryLight = Color(0xFFFDE8F3); // --primary-light
   static const Color accent       = Color(0xFF06B6D4); // --accent (cyan)
   static const Color success      = Color(0xFF10B981); // --success
   static const Color successLight = Color(0xFFECFDF5);
@@ -30,7 +30,7 @@ class AppTheme {
 
   // ── Chart Colors ────────────────────────────────────────────────────
   static const List<Color> chartPalette = [
-    Color(0xFF4F46E5),
+    Color(0xFFFA7BC2),
     Color(0xFF06B6D4),
     Color(0xFF10B981),
     Color(0xFFF59E0B),
