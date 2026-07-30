@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/api_service.dart';
+import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/services/print_service.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
-import '../../models/transaction.dart';
+import '../../models/transaction.dart' as tr;
 
 class PosScreen extends StatefulWidget {
   const PosScreen({super.key});
@@ -17,14 +17,10 @@ class PosScreen extends StatefulWidget {
 }
 
 class _PosScreenState extends State<PosScreen> {
-  final _api = ApiService();
-  List<Product> _products = [];
-  List<Category> _categories = [];
-  List<CartItem> _cart = [];
-  bool _loading = true;
-  String? _error;
+  final _fb = FirebaseService();
+  List<tr.CartItem> _cart = [];
   String _search = '';
-  int? _selectedCatId;
+  String? _selectedCatId;
   final _searchCtrl = TextEditingController();
 
   static const _emojis = ['🍜','🥤','☕','🍕','🍱','🧃','🍗','🥗','🍰','🍔','🥐','🍩'];
@@ -34,47 +30,9 @@ class _PosScreenState extends State<PosScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final results = await Future.wait([
-        _api.get('/products', queryParams: {'all': 'true'}),
-        _api.get('/categories'),
-      ]);
-      setState(() {
-        _products = (results[0]['data'] as List)
-            .map((e) => Product.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _categories = (results[1]['data'] as List)
-            .map((e) => Category.fromJson(e as Map<String, dynamic>))
-            .toList();
-      });
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  List<Product> get _filtered {
-    return _products.where((p) {
-      final matchSearch = _search.isEmpty ||
-          p.name.toLowerCase().contains(_search.toLowerCase()) ||
-          p.sku.toLowerCase().contains(_search.toLowerCase());
-      final matchCat = _selectedCatId == null || p.categoryId == _selectedCatId;
-      return matchSearch && matchCat;
-    }).toList();
   }
 
   void _addToCart(Product product) {
@@ -93,7 +51,7 @@ class _PosScreenState extends State<PosScreen> {
           );
         }
       } else {
-        _cart.add(CartItem(
+        _cart.add(tr.CartItem(
           productId: product.id,
           productName: product.name,
           price: product.sellingPrice,
@@ -102,11 +60,11 @@ class _PosScreenState extends State<PosScreen> {
     });
   }
 
-  void _removeFromCart(int productId) {
+  void _removeFromCart(String productId) {
     setState(() => _cart.removeWhere((c) => c.productId == productId));
   }
 
-  void _updateQty(int productId, int qty) {
+  void _updateQty(String productId, int qty) {
     setState(() {
       final idx = _cart.indexWhere((c) => c.productId == productId);
       if (idx >= 0) {
@@ -160,23 +118,27 @@ class _PosScreenState extends State<PosScreen> {
       String method, double payAmount, double discount) async {
     Navigator.pop(context);
     try {
-      final items = _cart
-          .map((c) => {'product_id': c.productId, 'quantity': c.quantity})
-          .toList();
+      final now = DateTime.now();
+      final invoice = 'INV-${now.millisecondsSinceEpoch}';
+      
+      final changeAmount = (payAmount - (_subtotal - discount)).clamp(0, double.infinity).toDouble();
 
-      final result = await _api.post('/transactions', {
-        'items': items,
-        'discount_amount': discount,
-        'pay_amount': payAmount,
-        'payment_method': method,
-      });
+      final transaction = tr.Transaction(
+        id: '',
+        invoiceNumber: invoice,
+        paymentMethod: method,
+        grandTotal: _subtotal - discount,
+        changeAmount: changeAmount,
+        createdAt: now.toIso8601String(),
+        items: List.from(_cart),
+      );
 
-      final trxData = result['data'] as Map<String, dynamic>;
-      final invoiceNo = trxData['invoice_number'] as String;
-      final change = double.tryParse(trxData['change_amount'].toString()) ?? 0;
+      await _fb.addTransaction(transaction);
+
+      final trxData = transaction.toFirestore();
+      trxData['id'] = transaction.id;
 
       setState(() => _cart = []);
-      _loadData();
 
       if (!mounted) return;
       _showSuccessDialog(trxData);
@@ -292,46 +254,41 @@ class _PosScreenState extends State<PosScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadData,
-          ),
-        ],
       ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary))
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.wifi_off_rounded,
-                            size: 48, color: AppTheme.textMuted),
-                        const SizedBox(height: 12),
-                        Text(_error!,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                                color: AppTheme.textSecondary)),
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: _loadData,
-                          icon: const Icon(Icons.refresh, size: 16),
-                          label: const Text('Coba Lagi'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Column(
-                  children: [
-                    _buildSearchAndFilter(),
-                    Expanded(child: _buildProductGrid()),
-                  ],
-                ),
+      body: StreamBuilder<List<Category>>(
+        stream: _fb.streamCategories(),
+        builder: (context, catSnapshot) {
+          final categories = catSnapshot.data ?? [];
+          return StreamBuilder<List<Product>>(
+            stream: _fb.streamProducts(),
+            builder: (context, prodSnapshot) {
+              if (prodSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+              }
+
+              var products = prodSnapshot.data ?? [];
+
+              // Local Filtering
+              if (_search.isNotEmpty) {
+                products = products
+                    .where((p) => p.name.toLowerCase().contains(_search.toLowerCase()) || 
+                                  p.sku.toLowerCase().contains(_search.toLowerCase()))
+                    .toList();
+              }
+              if (_selectedCatId != null) {
+                products = products.where((p) => p.categoryId == _selectedCatId).toList();
+              }
+
+              return Column(
+                children: [
+                  _buildSearchAndFilter(categories),
+                  Expanded(child: _buildProductGrid(products)),
+                ],
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: _cart.isEmpty
           ? null
           : FloatingActionButton.extended(
@@ -373,7 +330,7 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
-  Widget _buildSearchAndFilter() {
+  Widget _buildSearchAndFilter(List<Category> categories) {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Colors.white,
@@ -403,7 +360,7 @@ class _PosScreenState extends State<PosScreen> {
             child: Row(
               children: [
                 _catChip(null, 'Semua'),
-                ..._categories.map((c) => _catChip(c.id, c.name)),
+                ...categories.map((c) => _catChip(c.id, c.name)),
               ],
             ),
           ),
@@ -412,7 +369,7 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
-  Widget _catChip(int? catId, String label) {
+  Widget _catChip(String? catId, String label) {
     final isSelected = _selectedCatId == catId;
     return Padding(
       padding: const EdgeInsets.only(right: 6),
@@ -440,9 +397,8 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
-  Widget _buildProductGrid() {
-    final filtered = _filtered;
-    if (filtered.isEmpty) {
+  Widget _buildProductGrid(List<Product> products) {
+    if (products.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -465,14 +421,14 @@ class _PosScreenState extends State<PosScreen> {
         mainAxisSpacing: 10,
         childAspectRatio: 0.85,
       ),
-      itemCount: filtered.length,
-      itemBuilder: (ctx, i) => _buildProductCard(filtered[i]),
+      itemCount: products.length,
+      itemBuilder: (ctx, i) => _buildProductCard(products[i]),
     );
   }
 
   Widget _buildProductCard(Product product) {
-    final emojiIdx = product.id % _emojis.length;
-    final colorIdx = product.id % _colors.length;
+    final emojiIdx = product.name.length % _emojis.length;
+    final colorIdx = product.name.length % _colors.length;
     final cartItems = _cart.where((c) => c.productId == product.id);
     final inCart = cartItems.isNotEmpty;
     final cartQty = inCart ? cartItems.first.quantity : 0;
@@ -613,9 +569,9 @@ class _PosScreenState extends State<PosScreen> {
 
 // ── Cart Bottom Sheet ──────────────────────────────────────────────────────
 class _CartBottomSheet extends StatefulWidget {
-  final List<CartItem> cart;
-  final void Function(int) onRemove;
-  final void Function(int, int) onUpdateQty;
+  final List<tr.CartItem> cart;
+  final void Function(String) onRemove;
+  final void Function(String, int) onUpdateQty;
   final void Function(double) onCheckout;
 
   const _CartBottomSheet({
@@ -893,7 +849,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   double get _total =>
       (widget.subtotal - widget.discount).clamp(0, double.infinity);
   double get _change => (_payAmount - _total).clamp(0, double.infinity);
-  bool get _isValid => _payAmount >= _total;
+  bool get _isValid => _method != 'cash' || _payAmount >= _total;
 
   static const List<Map<String, dynamic>> _methods = [
     {'key': 'cash', 'label': 'Cash', 'icon': Icons.payments_outlined},
@@ -1100,8 +1056,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: (_method != 'cash' || _isValid) &&
-                          _method.isNotEmpty
+                  onPressed: _isValid
                       ? () => widget.onPay(
                           _method,
                           _method == 'cash' ? _payAmount : _total,

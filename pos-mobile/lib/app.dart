@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'core/services/auth_service.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/main/main_screen.dart';
+import 'screens/admin/admin_login_screen.dart';
+import 'screens/admin/admin_main_screen.dart';
 
 class KasirDigitalApp extends StatelessWidget {
   const KasirDigitalApp({super.key});

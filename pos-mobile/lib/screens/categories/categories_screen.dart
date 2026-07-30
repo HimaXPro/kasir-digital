@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/api_service.dart';
+import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/category.dart';
 
@@ -12,30 +12,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  final _api = ApiService();
-  List<Category> _categories = [];
-  bool _loading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final result = await _api.get('/categories');
-      setState(() => _categories = (result['data'] as List)
-          .map((e) => Category.fromJson(e as Map<String, dynamic>))
-          .toList());
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
+  final _fb = FirebaseService();
 
   void _showForm({Category? category}) {
     final nameCtrl = TextEditingController(text: category?.name);
@@ -102,12 +79,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                   final messenger = ScaffoldMessenger.of(context);
                                   try {
                                     if (category == null) {
-                                      await _api.post('/categories', {'name': nameCtrl.text.trim()});
+                                      await _fb.addCategory(Category(id: '', name: nameCtrl.text.trim()));
                                     } else {
-                                      await _api.put('/categories/${category.id}', {'name': nameCtrl.text.trim()});
+                                      await _fb.updateCategory(Category(id: category.id, name: nameCtrl.text.trim()));
                                     }
                                     nav.pop();
-                                    _load();
                                   } catch (e) {
                                     messenger.showSnackBar(
                                       SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
@@ -116,7 +92,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                     if (mounted) setSt(() => saving = false);
                                   }
                                 },
-
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -165,8 +140,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     if (confirm == true) {
       try {
-        await _api.delete('/categories/${category.id}');
-        setState(() => _categories.removeWhere((c) => c.id == category.id));
+        await _fb.deleteCategory(category.id);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -188,95 +162,90 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kategori'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
-        ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-          : _error != null
-              ? Center(
-                  child: Column(
+      body: StreamBuilder<List<Category>>(
+        stream: _fb.streamCategories(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
+                  const SizedBox(height: 12),
+                  Text(snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
+                ],
+              ),
+            );
+          }
+          
+          final categories = snapshot.data ?? [];
+          
+          if (categories.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('📂', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 8),
+                  Text('Belum ada kategori',
+                      style: GoogleFonts.inter(
+                          color: AppTheme.textSecondary, fontSize: 14)),
+                ],
+              ),
+            );
+          }
+          
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) {
+              final cat = categories[i];
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.border),
+                  boxShadow: const [AppTheme.shadowSm],
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.category_outlined, color: AppTheme.primary, size: 22),
+                  ),
+                  title: Text(cat.name,
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
+                  trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
-                      const SizedBox(height: 12),
-                      Text(_error!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _load,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Coba Lagi'),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: AppTheme.primary, size: 18),
+                        onPressed: () => _showForm(category: cat),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded,
+                            color: AppTheme.danger, size: 18),
+                        onPressed: () => _delete(cat),
                       ),
                     ],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppTheme.primary,
-                  child: _categories.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('📂', style: TextStyle(fontSize: 48)),
-                              const SizedBox(height: 8),
-                              Text('Belum ada kategori',
-                                  style: GoogleFonts.inter(
-                                      color: AppTheme.textSecondary, fontSize: 14)),
-                            ],
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
-                          itemCount: _categories.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (ctx, i) {
-                            final cat = _categories[i];
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: AppTheme.border),
-                                boxShadow: const [AppTheme.shadowSm],
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                leading: Container(
-                                  width: 44, height: 44,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryLight,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(Icons.category_outlined, color: AppTheme.primary, size: 22),
-                                ),
-                                title: Text(cat.name,
-                                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
-                                subtitle: Text(
-                                  '${cat.productsCount ?? 0} produk',
-                                  style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12),
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: AppTheme.primary, size: 18),
-                                      onPressed: () => _showForm(category: cat),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline_rounded,
-                                          color: AppTheme.danger, size: 18),
-                                      onPressed: () => _delete(cat),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
                 ),
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showForm(),
         backgroundColor: AppTheme.primary,

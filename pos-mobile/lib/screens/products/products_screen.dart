@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/api_service.dart';
+import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/category.dart';
@@ -14,86 +14,15 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  final _api = ApiService();
-  List<Product> _products = [];
-  List<Category> _categories = [];
-  bool _loading = true;
-  String? _error;
-  int _page = 1;
-  int _lastPage = 1;
-  bool _loadingMore = false;
+  final _fb = FirebaseService();
   String _search = '';
-  int? _filterCatId;
+  String? _filterCatId;
   final _searchCtrl = TextEditingController();
-  final _scrollCtrl = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-    _scrollCtrl.addListener(_onScroll);
-  }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
-    _scrollCtrl.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 100 &&
-        !_loadingMore &&
-        _page < _lastPage) {
-      _loadMore();
-    }
-  }
-
-  Future<void> _loadData({bool reset = true}) async {
-    if (reset) setState(() { _loading = true; _error = null; _page = 1; });
-    try {
-      final results = await Future.wait([
-        _api.get('/products', queryParams: {
-          'page': '1',
-          'per_page': '20',
-          if (_search.isNotEmpty) 'search': _search,
-          if (_filterCatId != null) 'category_id': '$_filterCatId',
-        }),
-        _api.get('/categories'),
-      ]);
-      setState(() {
-        _products = (results[0]['data'] as List)
-            .map((e) => Product.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _lastPage = results[0]['meta']?['last_page'] as int? ?? 1;
-        _categories = (results[1]['data'] as List)
-            .map((e) => Category.fromJson(e as Map<String, dynamic>))
-            .toList();
-      });
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _loadMore() async {
-    setState(() { _loadingMore = true; _page++; });
-    try {
-      final result = await _api.get('/products', queryParams: {
-        'page': '$_page',
-        'per_page': '20',
-        if (_search.isNotEmpty) 'search': _search,
-        if (_filterCatId != null) 'category_id': '$_filterCatId',
-      });
-      setState(() {
-        _products.addAll((result['data'] as List)
-            .map((e) => Product.fromJson(e as Map<String, dynamic>)));
-        _lastPage = result['meta']?['last_page'] as int? ?? 1;
-      });
-    } catch (_) {} finally {
-      setState(() => _loadingMore = false);
-    }
   }
 
   Future<void> _deleteProduct(Product product) async {
@@ -123,8 +52,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     if (confirm == true) {
       try {
-        await _api.delete('/products/${product.id}');
-        setState(() => _products.removeWhere((p) => p.id == product.id));
+        await _fb.deleteProduct(product.id);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -141,17 +69,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  void _openForm({Product? product}) async {
-    final result = await Navigator.push<bool>(
+  void _openForm({Product? product, List<Category>? categories}) {
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ProductFormScreen(
           product: product,
-          categories: _categories,
+          categories: categories ?? [],
         ),
       ),
     );
-    if (result == true) _loadData();
   }
 
   @override
@@ -163,40 +90,59 @@ class _ProductsScreenState extends State<ProductsScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => _loadData(),
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          _buildSearchFilter(),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : _error != null
-                    ? _buildError()
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        color: AppTheme.primary,
-                        child: _buildList(),
-                      ),
-          ),
-        ],
+      body: StreamBuilder<List<Category>>(
+        stream: _fb.streamCategories(),
+        builder: (context, catSnapshot) {
+          final categories = catSnapshot.data ?? [];
+          return StreamBuilder<List<Product>>(
+            stream: _fb.streamProducts(),
+            builder: (context, prodSnapshot) {
+              if (prodSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+              }
+
+              var products = prodSnapshot.data ?? [];
+
+              // Local Filtering
+              if (_search.isNotEmpty) {
+                products = products
+                    .where((p) => p.name.toLowerCase().contains(_search.toLowerCase()) || 
+                                  p.sku.toLowerCase().contains(_search.toLowerCase()))
+                    .toList();
+              }
+              if (_filterCatId != null) {
+                products = products.where((p) => p.categoryId == _filterCatId).toList();
+              }
+
+              return Column(
+                children: [
+                  _buildSearchFilter(categories),
+                  Expanded(
+                    child: _buildList(products, categories),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        backgroundColor: AppTheme.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('Tambah Produk',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+      floatingActionButton: StreamBuilder<List<Category>>(
+        stream: _fb.streamCategories(),
+        builder: (context, snapshot) {
+          return FloatingActionButton.extended(
+            onPressed: () => _openForm(categories: snapshot.data),
+            backgroundColor: AppTheme.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: Text('Tambah Produk',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+          );
+        }
       ),
     );
   }
 
-  Widget _buildSearchFilter() {
+  Widget _buildSearchFilter(List<Category> categories) {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Colors.white,
@@ -206,7 +152,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
             controller: _searchCtrl,
             onChanged: (v) {
               setState(() => _search = v);
-              _loadData();
             },
             decoration: InputDecoration(
               hintText: 'Cari nama produk atau SKU…',
@@ -217,20 +162,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       onPressed: () {
                         _searchCtrl.clear();
                         setState(() => _search = '');
-                        _loadData();
                       },
                     )
                   : null,
             ),
           ),
-          if (_categories.isNotEmpty) ...[
+          if (categories.isNotEmpty) ...[
             const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   _filterChip(null, 'Semua'),
-                  ..._categories.map((c) => _filterChip(c.id, c.name)),
+                  ...categories.map((c) => _filterChip(c.id, c.name)),
                 ],
               ),
             ),
@@ -240,14 +184,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
-  Widget _filterChip(int? catId, String label) {
+  Widget _filterChip(String? catId, String label) {
     final isSelected = _filterCatId == catId;
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
         onTap: () {
           setState(() => _filterCatId = catId);
-          _loadData();
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -270,32 +213,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
-  Widget _buildError() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
-              const SizedBox(height: 12),
-              Text('Gagal memuat produk',
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text(_error!, textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadData,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Coba Lagi'),
-              ),
-            ],
-          ),
-        ),
-      );
-
-  Widget _buildList() {
-    if (_products.isEmpty) {
+  Widget _buildList(List<Product> products, List<Category> categories) {
+    if (products.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -304,42 +223,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
             const SizedBox(height: 8),
             Text('Belum ada produk',
                 style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 14)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _openForm(),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Tambah Produk'),
-            ),
           ],
         ),
       );
     }
 
     return ListView.separated(
-      controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
-      itemCount: _products.length + (_loadingMore ? 1 : 0),
+      itemCount: products.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (ctx, i) {
-        if (i == _products.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2),
-            ),
-          );
-        }
-        return _buildProductTile(_products[i]);
+        return _buildProductTile(products[i], categories);
       },
     );
   }
 
-  Widget _buildProductTile(Product product) {
+  Widget _buildProductTile(Product product, List<Category> categories) {
     final stockColor = product.stock > 10
         ? AppTheme.success
         : product.stock > 0
             ? AppTheme.warning
             : AppTheme.danger;
+            
+    final categoryName = categories.where((c) => c.id == product.categoryId).firstOrNull?.name;
 
     return Container(
       decoration: BoxDecoration(
@@ -385,7 +291,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   product.stock <= 0 ? 'Habis' : 'Stok: ${product.stock}',
                   style: GoogleFonts.inter(color: stockColor, fontSize: 11, fontWeight: FontWeight.w600),
                 ),
-                if (product.category != null) ...[
+                if (categoryName != null) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -394,7 +300,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      product.category!.name,
+                      categoryName,
                       style: GoogleFonts.inter(
                           fontSize: 10, fontWeight: FontWeight.w600,
                           color: AppTheme.textSecondary),
@@ -410,7 +316,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: AppTheme.primary, size: 18),
-              onPressed: () => _openForm(product: product),
+              onPressed: () => _openForm(product: product, categories: categories),
               tooltip: 'Edit',
             ),
             IconButton(
@@ -438,7 +344,7 @@ class ProductFormScreen extends StatefulWidget {
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiService();
+  final _fb = FirebaseService();
   bool _loading = false;
 
   late final _nameCtrl = TextEditingController(text: widget.product?.name);
@@ -449,7 +355,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       text: widget.product?.sellingPrice.toStringAsFixed(0));
   late final _stockCtrl = TextEditingController(
       text: widget.product?.stock.toString());
-  int? _categoryId;
+  String? _categoryId;
 
   bool get _isEdit => widget.product != null;
 
@@ -473,19 +379,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final body = {
-        if (_categoryId != null) 'category_id': _categoryId,
-        'name': _nameCtrl.text.trim(),
-        'sku': _skuCtrl.text.trim(),
-        'cost_price': double.parse(_costCtrl.text),
-        'selling_price': double.parse(_priceCtrl.text),
-        'stock': int.parse(_stockCtrl.text),
-      };
+      final newProduct = Product(
+        id: _isEdit ? widget.product!.id : '',
+        categoryId: _categoryId,
+        name: _nameCtrl.text.trim(),
+        sku: _skuCtrl.text.trim(),
+        costPrice: double.parse(_costCtrl.text),
+        sellingPrice: double.parse(_priceCtrl.text),
+        stock: int.parse(_stockCtrl.text),
+      );
 
       if (_isEdit) {
-        await _api.put('/products/${widget.product!.id}', body);
+        await _fb.updateProduct(newProduct);
       } else {
-        await _api.post('/products', body);
+        await _fb.addProduct(newProduct);
       }
 
       if (!mounted) return;
@@ -615,7 +522,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
   }
 
-  Widget _buildDropdown(String label, int? value, List<Category> categories) {
+  Widget _buildDropdown(String label, String? value, List<Category> categories) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -623,15 +530,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             style: GoogleFonts.inter(
                 fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
         const SizedBox(height: 6),
-        DropdownButtonFormField<int?>(
-          initialValue: value,
+        DropdownButtonFormField<String?>(
+          value: value,
           decoration: const InputDecoration(),
-
           hint: Text('Pilih kategori (opsional)',
               style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
           style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textPrimary),
           items: [
-            DropdownMenuItem<int?>(
+            DropdownMenuItem<String?>(
               value: null,
               child: Text('Tanpa Kategori',
                   style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),

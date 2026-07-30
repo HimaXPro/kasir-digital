@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/api_service.dart';
+import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 
@@ -13,7 +13,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _api = ApiService();
+  final _fb = FirebaseService();
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
@@ -30,8 +30,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _error = null;
     });
     try {
-      final result = await _api.get('/dashboard');
-      setState(() => _data = result['data'] as Map<String, dynamic>);
+      final result = await _fb.getDashboardStats();
+      setState(() => _data = result);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
