@@ -1163,6 +1163,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 ),
               ),
             ],
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
