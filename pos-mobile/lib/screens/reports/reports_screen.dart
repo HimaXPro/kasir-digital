@@ -144,7 +144,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildStockMovementsTab() {
     return StreamBuilder<List<StockMovement>>(
-      stream: _fb.streamStockMovements(),
+      stream: _fb.streamStockMovements(timeline: _timeline),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
@@ -157,10 +157,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           );
         }
 
-        return ListView.separated(
+        return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: movements.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (ctx, i) {
             final m = movements[i];
             final isOut = m.type == 'OUT';
@@ -169,12 +168,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
             final sign = isOut ? '-' : '+';
             
             String dateStr = m.createdAt;
+            String monthHeader = '';
             try {
               final dt = DateTime.parse(m.createdAt);
               dateStr = DateFormat('dd MMM yyyy, HH:mm').format(dt);
+              monthHeader = DateFormat('MMMM yyyy').format(dt);
             } catch (_) {}
 
-            return Container(
+            bool showHeader = false;
+            if (i == 0) {
+              showHeader = true;
+            } else {
+              try {
+                final prevDt = DateTime.parse(movements[i-1].createdAt);
+                final prevMonthHeader = DateFormat('MMMM yyyy').format(prevDt);
+                if (monthHeader != prevMonthHeader) showHeader = true;
+              } catch (_) {}
+            }
+
+            final movementCard = Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -216,6 +228,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           fontSize: 16, fontWeight: FontWeight.w800, color: color)),
                 ],
               ),
+            );
+
+            if (showHeader && monthHeader.isNotEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (i > 0) const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8, left: 4),
+                    child: Text(
+                      monthHeader.toUpperCase(),
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted),
+                    ),
+                  ),
+                  movementCard,
+                  if (i < movements.length - 1) const SizedBox(height: 8),
+                ],
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: movementCard,
             );
           },
         );

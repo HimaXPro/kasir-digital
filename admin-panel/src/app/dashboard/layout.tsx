@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './layout.module.css';
 import { Inter } from 'next/font/google';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,13 +14,36 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [role, setRole] = useState('');
+  const [title, setTitle] = useState('Memuat...');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userDocRef = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+        if (!userDocRef.empty) {
+          const uData = userDocRef.docs[0].data();
+          setRole(uData.role);
+          setTitle(uData.role === 'superadmin' ? 'Superadmin' : 'Admin Cabang');
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <div style={{padding: '40px', color: 'var(--text-muted)'}}>Memuat antarmuka...</div>;
+  }
+
   return (
     <div className={`${styles.dashboardContainer} ${inter.className}`}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <h2>Kasir Digital</h2>
-          <span className={styles.badge}>Superadmin</span>
+          <span className={styles.badge}>{title}</span>
         </div>
         
         <nav className={styles.nav}>
@@ -29,10 +55,12 @@ export default function DashboardLayout({
             <span className={styles.icon}>👥</span>
             Kelola Karyawan
           </Link>
-          <Link href="/dashboard/cabang" className={styles.navItem}>
-            <span className={styles.icon}>🏬</span>
-            Cabang / Kota
-          </Link>
+          {role === 'superadmin' && (
+            <Link href="/dashboard/cabang" className={styles.navItem}>
+              <span className={styles.icon}>🏬</span>
+              Cabang / Kota
+            </Link>
+          )}
         </nav>
         
         <div className={styles.logoutBtn}>

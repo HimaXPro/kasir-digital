@@ -136,9 +136,28 @@ class FirebaseService {
     return docRef;
   }
 
-  // === STOCK MOVEMENTS ===
-  Stream<List<StockMovement>> streamStockMovements() {
+  Stream<List<StockMovement>> streamStockMovements({String timeline = 'monthly'}) {
+    final now = DateTime.now();
+    DateTime startDate;
+    switch (timeline) {
+      case 'daily':
+        startDate = DateTime(now.year, now.month, now.day);
+        break;
+      case 'weekly':
+        startDate = now.subtract(const Duration(days: 7));
+        break;
+      case 'monthly':
+        startDate = now.subtract(const Duration(days: 30));
+        break;
+      case 'yearly':
+        startDate = now.subtract(const Duration(days: 365));
+        break;
+      default:
+        startDate = DateTime(now.year, now.month, now.day);
+    }
+    
     return _cityRef('stock_movements')
+        .where('created_at', isGreaterThanOrEqualTo: startDate.toIso8601String())
         .orderBy('created_at', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs

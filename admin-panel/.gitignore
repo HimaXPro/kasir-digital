@@ -42,3 +42,4 @@ next-env.d.ts
 
 #jangan di push ke github
 src/lib/firebase.ts
+service-account.json
