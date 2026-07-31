@@ -103,10 +103,8 @@ class _PosScreenState extends State<PosScreen> {
         onRemove: _removeFromCart,
         onUpdateQty: _updateQty,
         onUpdateItemNote: (id, note) {
-          setState(() {
-            final idx = _cart.indexWhere((c) => c.productId == id);
-            if (idx >= 0) _cart[idx].note = note;
-          });
+          final idx = _cart.indexWhere((c) => c.productId == id);
+          if (idx >= 0) _cart[idx].note = note;
         },
         onCheckout: _openPayment,
       ),
@@ -957,9 +955,11 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -981,18 +981,20 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(Icons.payment_rounded,
-                      color: AppTheme.primary, size: 20),
+                  const Icon(Icons.payment_rounded, color: AppTheme.primary, size: 20),
                   const SizedBox(width: 8),
-                  Text('Pembayaran',
-                      style: GoogleFonts.inter(
-                          fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text('Pembayaran', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: _methods.map((m) {
                   final isSelected = _method == m['key'];
