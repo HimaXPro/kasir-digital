@@ -98,15 +98,17 @@ class _PosScreenState extends State<PosScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CartBottomSheet(
-        cart: _cart,
-        onRemove: _removeFromCart,
-        onUpdateQty: _updateQty,
-        onUpdateItemNote: (id, note) {
-          final idx = _cart.indexWhere((c) => c.productId == id);
-          if (idx >= 0) _cart[idx].note = note;
-        },
-        onCheckout: _openPayment,
+      builder: (_) => KeyboardPadding(
+        child: _CartBottomSheet(
+          cart: _cart,
+          onRemove: _removeFromCart,
+          onUpdateQty: _updateQty,
+          onUpdateItemNote: (id, note) {
+            final idx = _cart.indexWhere((c) => c.productId == id);
+            if (idx >= 0) _cart[idx].note = note;
+          },
+          onCheckout: _openPayment,
+        ),
       ),
     );
   }
@@ -117,10 +119,12 @@ class _PosScreenState extends State<PosScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _PaymentBottomSheet(
-        subtotal: _subtotal,
-        discount: discount,
-        onPay: _processPayment,
+      builder: (_) => KeyboardPadding(
+        child: _PaymentBottomSheet(
+          subtotal: _subtotal,
+          discount: discount,
+          onPay: _processPayment,
+        ),
       ),
     );
   }
@@ -807,8 +811,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
           ),
           const Divider(height: 1),
           Padding(
-            padding: EdgeInsets.fromLTRB(
-                20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 16),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             child: Column(
               children: [
                 Row(
@@ -954,9 +957,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
+    return Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
@@ -1197,6 +1198,19 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class KeyboardPadding extends StatelessWidget {
+  final Widget child;
+  const KeyboardPadding({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: child,
     );
   }
 }
