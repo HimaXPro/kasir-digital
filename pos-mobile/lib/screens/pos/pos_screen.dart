@@ -102,6 +102,12 @@ class _PosScreenState extends State<PosScreen> {
         cart: _cart,
         onRemove: _removeFromCart,
         onUpdateQty: _updateQty,
+        onUpdateItemNote: (id, note) {
+          setState(() {
+            final idx = _cart.indexWhere((c) => c.productId == id);
+            if (idx >= 0) _cart[idx].note = note;
+          });
+        },
         onCheckout: _openPayment,
       ),
     );
@@ -122,7 +128,7 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   Future<void> _processPayment(
-      String method, double payAmount, double discount) async {
+      String method, double payAmount, double discount, String customerName, String orderNote) async {
     Navigator.pop(context);
     try {
       final now = DateTime.now();
@@ -138,6 +144,8 @@ class _PosScreenState extends State<PosScreen> {
         changeAmount: changeAmount,
         createdAt: now.toIso8601String(),
         items: List.from(_cart),
+        customerName: customerName.isNotEmpty ? customerName : null,
+        orderNote: orderNote.isNotEmpty ? orderNote : null,
       );
 
       final addedTrx = await _fb.addTransaction(transaction);
@@ -617,12 +625,14 @@ class _CartBottomSheet extends StatefulWidget {
   final List<tr.CartItem> cart;
   final void Function(String) onRemove;
   final void Function(String, int) onUpdateQty;
+  final void Function(String, String) onUpdateItemNote;
   final void Function(double) onCheckout;
 
   const _CartBottomSheet({
     required this.cart,
     required this.onRemove,
     required this.onUpdateQty,
+    required this.onUpdateItemNote,
     required this.onCheckout,
   });
 
@@ -726,9 +736,35 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                             Text(formatRupiah(item.price),
                                 style: GoogleFonts.inter(
                                     color: AppTheme.textMuted, fontSize: 12)),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: TextEditingController(text: item.note)
+                                ..selection = TextSelection.collapsed(offset: item.note?.length ?? 0),
+                              style: GoogleFonts.inter(fontSize: 12),
+                              decoration: InputDecoration(
+                                hintText: 'Tambah catatan (opsional)...',
+                                hintStyle: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: AppTheme.border),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: AppTheme.border),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: AppTheme.primary),
+                                ),
+                              ),
+                              onChanged: (val) => widget.onUpdateItemNote(item.productId, val),
+                            ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
                       Row(
                         children: [
                           _qtyBtn(Icons.remove, () {
@@ -874,7 +910,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
 class _PaymentBottomSheet extends StatefulWidget {
   final double subtotal;
   final double discount;
-  final void Function(String method, double pay, double discount) onPay;
+  final void Function(String method, double pay, double discount, String customerName, String orderNote) onPay;
 
   const _PaymentBottomSheet({
     required this.subtotal,
@@ -890,6 +926,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   String _method = 'cash';
   double _payAmount = 0;
   final _payCtrl = TextEditingController();
+  final _customerNameCtrl = TextEditingController();
+  final _orderNoteCtrl = TextEditingController();
 
   double get _total =>
       (widget.subtotal - widget.discount).clamp(0, double.infinity);
@@ -911,6 +949,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   @override
   void dispose() {
     _payCtrl.dispose();
+    _customerNameCtrl.dispose();
+    _orderNoteCtrl.dispose();
     super.dispose();
   }
 
@@ -998,6 +1038,35 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                     ),
                   );
                 }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _customerNameCtrl,
+                    style: GoogleFonts.inter(fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Nama Pelanggan (Opsional)',
+                      labelStyle: GoogleFonts.inter(fontSize: 13),
+                      isDense: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _orderNoteCtrl,
+                    style: GoogleFonts.inter(fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Keterangan Pesanan (Opsional)',
+                      labelStyle: GoogleFonts.inter(fontSize: 13),
+                      isDense: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -1103,7 +1172,9 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                       ? () => widget.onPay(
                           _method,
                           _method == 'cash' ? _payAmount : _total,
-                          widget.discount)
+                          widget.discount,
+                          _customerNameCtrl.text.trim(),
+                          _orderNoteCtrl.text.trim())
                       : null,
                   icon: const Icon(Icons.check_circle_rounded, size: 20),
                   label: Text('Proses Pembayaran',

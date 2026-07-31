@@ -4,6 +4,7 @@ class CartItem {
   final double price;
   final double costPrice;
   int quantity;
+  String? note;
 
   CartItem({
     required this.productId,
@@ -11,6 +12,7 @@ class CartItem {
     required this.price,
     this.costPrice = 0,
     this.quantity = 1,
+    this.note,
   });
 
   double get subtotal => price * quantity;
@@ -22,6 +24,7 @@ class CartItem {
         'price': price,
         'cost_price': costPrice,
         'quantity': quantity,
+        'note': note,
       };
 
   factory CartItem.fromFirestore(Map<String, dynamic> json) => CartItem(
@@ -30,6 +33,7 @@ class CartItem {
         price: double.tryParse(json['price'].toString()) ?? 0,
         costPrice: double.tryParse(json['cost_price']?.toString() ?? '0') ?? 0,
         quantity: json['quantity'] as int? ?? 1,
+        note: json['note'] as String?,
       );
 }
 
@@ -41,6 +45,8 @@ class Transaction {
   final double changeAmount;
   final String createdAt;
   final List<CartItem>? items;
+  final String? customerName;
+  final String? orderNote;
 
   Transaction({
     required this.id,
@@ -50,6 +56,8 @@ class Transaction {
     required this.changeAmount,
     required this.createdAt,
     this.items,
+    this.customerName,
+    this.orderNote,
   });
 
   factory Transaction.fromFirestore(Map<String, dynamic> json, String docId) {
@@ -68,6 +76,8 @@ class Transaction {
       changeAmount: double.tryParse(json['change_amount'].toString()) ?? 0,
       createdAt: json['created_at'] as String? ?? '',
       items: itemsList,
+      customerName: json['customer_name'] as String?,
+      orderNote: json['order_note'] as String?,
     );
   }
 
@@ -78,5 +88,7 @@ class Transaction {
         'change_amount': changeAmount,
         'created_at': createdAt,
         'items': items?.map((item) => item.toFirestore()).toList() ?? [],
+        if (customerName != null) 'customer_name': customerName,
+        if (orderNote != null) 'order_note': orderNote,
       };
 }

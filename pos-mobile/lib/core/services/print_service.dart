@@ -48,13 +48,23 @@ class PrintService {
     bluetooth.printLeftRight("Invoice:", transactionData['invoice_number'] ?? '-', 0);
     bluetooth.printLeftRight("Waktu:", transactionData['created_at'] ?? '-', 0);
     bluetooth.printLeftRight("Kasir:", "Admin", 0);
+    if (transactionData['customer_name'] != null && transactionData['customer_name'].toString().isNotEmpty) {
+      bluetooth.printLeftRight("Pelanggan:", transactionData['customer_name'].toString(), 0);
+    }
     bluetooth.printLeftRight("Metode:", (transactionData['payment_method'] ?? 'CASH').toString().toUpperCase(), 0);
+    if (transactionData['order_note'] != null && transactionData['order_note'].toString().isNotEmpty) {
+      bluetooth.printCustom("Catatan: ${transactionData['order_note']}", 0, 0);
+    }
     
     bluetooth.printCustom("--------------------------------", 0, 1);
 
     List items = transactionData['items'] ?? [];
     for (var item in items) {
       bluetooth.printCustom(item['name'] ?? item['product_name'] ?? 'Item', 0, 0);
+      
+      if (item['note'] != null && item['note'].toString().isNotEmpty) {
+        bluetooth.printCustom("  * ${item['note']}", 0, 0);
+      }
       
       int qty = item['quantity'] ?? item['qty'] ?? 1;
       int price = item['price'] ?? item['selling_price'] ?? 0;

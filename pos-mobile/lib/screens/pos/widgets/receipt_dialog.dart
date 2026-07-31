@@ -86,6 +86,34 @@ class ReceiptDialog extends StatelessWidget {
                         Text(transaction.paymentMethod, style: GoogleFonts.ibmPlexMono(fontSize: 12)),
                       ],
                     ),
+                    if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Pelanggan:', style: GoogleFonts.ibmPlexMono(fontSize: 12)),
+                          Text(transaction.customerName!, style: GoogleFonts.ibmPlexMono(fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                    if (transaction.orderNote != null && transaction.orderNote!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Catatan:', style: GoogleFonts.ibmPlexMono(fontSize: 12)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              transaction.orderNote!, 
+                              style: GoogleFonts.ibmPlexMono(fontSize: 12),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     
                     const SizedBox(height: 16),
                     _dashLine(),
@@ -102,6 +130,14 @@ class ReceiptDialog extends StatelessWidget {
                               item.productName,
                               style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
+                            if (item.note != null && item.note!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  '* ${item.note}',
+                                  style: GoogleFonts.ibmPlexMono(fontSize: 10, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                                ),
+                              ),
                             const SizedBox(height: 4),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -195,6 +231,8 @@ class ReceiptDialog extends StatelessWidget {
                             'invoice_number': transaction.invoiceNumber,
                             'created_at': _formatDate(transaction.createdAt),
                             'payment_method': transaction.paymentMethod,
+                            'customer_name': transaction.customerName,
+                            'order_note': transaction.orderNote,
                             'subtotal': transaction.items?.fold<num>(0, (sum, i) => sum + i.subtotal).toInt() ?? 0,
                             'discount': 0,
                             'grand_total': transaction.grandTotal.toInt(),
@@ -203,6 +241,7 @@ class ReceiptDialog extends StatelessWidget {
                               'name': e.productName,
                               'quantity': e.quantity,
                               'price': e.price.toInt(),
+                              'note': e.note,
                             }).toList() ?? [],
                           };
                           
