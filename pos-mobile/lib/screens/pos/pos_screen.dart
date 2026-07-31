@@ -299,6 +299,7 @@ class _PosScreenState extends State<PosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('🛒 Kasir POS'),
         leading: IconButton(
@@ -735,9 +736,8 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                 style: GoogleFonts.inter(
                                     color: AppTheme.textMuted, fontSize: 12)),
                             const SizedBox(height: 6),
-                            TextField(
-                              controller: TextEditingController(text: item.note)
-                                ..selection = TextSelection.collapsed(offset: item.note?.length ?? 0),
+                            TextFormField(
+                              initialValue: item.note,
                               style: GoogleFonts.inter(fontSize: 12),
                               decoration: InputDecoration(
                                 hintText: 'Tambah catatan (opsional)...',

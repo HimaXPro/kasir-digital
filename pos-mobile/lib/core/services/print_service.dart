@@ -43,20 +43,20 @@ class PrintService {
     bluetooth.printNewLine();
     bluetooth.printCustom("KASIR DIGITAL", 2, 1);
     bluetooth.printCustom("Point of Sale System", 0, 1);
-    bluetooth.printCustom("--------------------------------", 0, 1);
+    bluetooth.printCustom("-------------------------------", 0, 1);
     
-    bluetooth.printLeftRight("Invoice:", transactionData['invoice_number'] ?? '-', 0);
-    bluetooth.printLeftRight("Waktu:", transactionData['created_at'] ?? '-', 0);
+    bluetooth.printLeftRight("No:", transactionData['invoice_number'] ?? '-', 0);
+    bluetooth.printLeftRight("Tgl:", transactionData['created_at'] ?? '-', 0);
     bluetooth.printLeftRight("Kasir:", "Admin", 0);
     if (transactionData['customer_name'] != null && transactionData['customer_name'].toString().isNotEmpty) {
       bluetooth.printLeftRight("Pelanggan:", transactionData['customer_name'].toString(), 0);
     }
-    bluetooth.printLeftRight("Metode:", (transactionData['payment_method'] ?? 'CASH').toString().toUpperCase(), 0);
+    bluetooth.printLeftRight("Pembayaran:", (transactionData['payment_method'] ?? 'CASH').toString().toUpperCase(), 0);
     if (transactionData['order_note'] != null && transactionData['order_note'].toString().isNotEmpty) {
       bluetooth.printCustom("Catatan: ${transactionData['order_note']}", 0, 0);
     }
     
-    bluetooth.printCustom("--------------------------------", 0, 1);
+    bluetooth.printCustom("-------------------------------", 0, 1);
 
     List items = transactionData['items'] ?? [];
     for (var item in items) {
@@ -73,7 +73,7 @@ class PrintService {
       bluetooth.printLeftRight("$qty x ${currency.format(price)}", currency.format(subtotal), 0);
     }
 
-    bluetooth.printCustom("--------------------------------", 0, 1);
+    bluetooth.printCustom("-------------------------------", 0, 1);
     
     int subtotal = transactionData['subtotal'] ?? 0;
     int discount = transactionData['discount_amount'] ?? transactionData['discount'] ?? 0;
@@ -81,15 +81,15 @@ class PrintService {
     int payAmt = transactionData['pay_amount'] ?? transactionData['payAmt'] ?? total;
     int change = payAmt - total;
 
-    bluetooth.printLeftRight("Subtotal", currency.format(subtotal), 0);
     if (discount > 0) {
+      bluetooth.printLeftRight("Subtotal", currency.format(subtotal), 0);
       bluetooth.printLeftRight("Diskon", "-${currency.format(discount)}", 0);
     }
     bluetooth.printLeftRight("TOTAL", currency.format(total), 1);
-    bluetooth.printLeftRight("Bayar", currency.format(payAmt), 0);
-    bluetooth.printLeftRight("Kembali", currency.format(change > 0 ? change : 0), 0);
+    bluetooth.printLeftRight("TUNAI", currency.format(payAmt), 0);
+    bluetooth.printLeftRight("KEMBALI", currency.format(change > 0 ? change : 0), 0);
 
-    bluetooth.printCustom("--------------------------------", 0, 1);
+    bluetooth.printCustom("-------------------------------", 0, 1);
     bluetooth.printCustom("Terima kasih atas kunjungan Anda", 0, 1);
     bluetooth.printCustom("Barang yang sudah dibeli", 0, 1);
     bluetooth.printCustom("tidak dapat dikembalikan", 0, 1);
