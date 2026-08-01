@@ -11,7 +11,9 @@ import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final VoidCallback? onBukaKasirTap;
+
+  const DashboardScreen({super.key, this.onBukaKasirTap});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -136,21 +138,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.primary,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.point_of_sale, color: Colors.white, size: 14),
-              const SizedBox(width: 6),
-              Text('Buka Kasir',
-                  style: GoogleFonts.inter(
-                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
+        InkWell(
+          onTap: widget.onBukaKasirTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.point_of_sale, color: Colors.white, size: 14),
+                const SizedBox(width: 6),
+                Text('Buka Kasir',
+                    style: GoogleFonts.inter(
+                        color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
         ),
       ],

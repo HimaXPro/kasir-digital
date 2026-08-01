@@ -73,7 +73,13 @@ class _MainScreenState extends State<MainScreen> {
     
     // 1. Dashboard (Owner only)
     if (user.isOwner) {
-      screens.add(const DashboardScreen());
+      screens.add(DashboardScreen(
+        onBukaKasirTap: () {
+          setState(() {
+            _selectedIndex = 1;
+          });
+        },
+      ));
       navItems.add(const _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard'));
     }
     
