@@ -26,6 +26,17 @@ class _ProductsScreenState extends State<ProductsScreen> {
   String? _filterCatId;
   final _searchCtrl = TextEditingController();
 
+  late Stream<List<Category>> _categoriesStream;
+  late Stream<List<Product>> _productsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
+    _categoriesStream = fb.streamCategories();
+    _productsStream = fb.streamProducts();
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -99,11 +110,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
         ),
       ),
       body: StreamBuilder<List<Category>>(
-        stream: _fb.streamCategories(),
+        stream: _categoriesStream,
         builder: (context, catSnapshot) {
           final categories = catSnapshot.data ?? [];
           return StreamBuilder<List<Product>>(
-            stream: _fb.streamProducts(),
+            stream: _productsStream,
             builder: (context, prodSnapshot) {
               if (prodSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
@@ -135,7 +146,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         },
       ),
       floatingActionButton: StreamBuilder<List<Category>>(
-        stream: _fb.streamCategories(),
+        stream: _categoriesStream,
         builder: (context, snapshot) {
           return FloatingActionButton.extended(
             onPressed: () => _openForm(categories: snapshot.data),

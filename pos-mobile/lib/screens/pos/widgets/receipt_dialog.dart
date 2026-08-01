@@ -86,6 +86,14 @@ class ReceiptDialog extends StatelessWidget {
                         Text(transaction.paymentMethod, style: GoogleFonts.ibmPlexMono(fontSize: 12)),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Kasir:', style: GoogleFonts.ibmPlexMono(fontSize: 12)),
+                        Text(transaction.cashierName ?? 'Kasir', style: GoogleFonts.ibmPlexMono(fontSize: 12)),
+                      ],
+                    ),
                     if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
@@ -232,6 +240,7 @@ class ReceiptDialog extends StatelessWidget {
                             'created_at': _formatDate(transaction.createdAt),
                             'payment_method': transaction.paymentMethod,
                             'customer_name': transaction.customerName,
+                            'cashier_name': transaction.cashierName,
                             'order_note': transaction.orderNote,
                             'subtotal': transaction.items?.fold<num>(0, (sum, i) => sum + i.subtotal).toInt() ?? 0,
                             'discount': 0,

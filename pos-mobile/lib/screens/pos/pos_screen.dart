@@ -38,6 +38,17 @@ class _PosScreenState extends State<PosScreen> {
     Color(0xFFFFFBEB), Color(0xFFFEF2F2), Color(0xFFF5F3FF),
   ];
 
+  late Stream<List<Category>> _categoriesStream;
+  late Stream<List<Product>> _productsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
+    _categoriesStream = fb.streamCategories();
+    _productsStream = fb.streamProducts();
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -137,6 +148,7 @@ class _PosScreenState extends State<PosScreen> {
       
       final changeAmount = (payAmount - (_subtotal - discount)).clamp(0, double.infinity).toDouble();
 
+      final cashierName = context.read<AuthProvider>().currentUser?.name ?? 'Kasir';
       final transaction = tr.Transaction(
         id: '',
         invoiceNumber: invoice,
@@ -147,6 +159,7 @@ class _PosScreenState extends State<PosScreen> {
         items: List.from(_cart),
         customerName: customerName.isNotEmpty ? customerName : null,
         orderNote: orderNote.isNotEmpty ? orderNote : null,
+        cashierName: cashierName,
       );
 
       final addedTrx = await _fb.addTransaction(transaction);
@@ -311,11 +324,11 @@ class _PosScreenState extends State<PosScreen> {
         ),
       ),
       body: StreamBuilder<List<Category>>(
-        stream: _fb.streamCategories(),
+        stream: _categoriesStream,
         builder: (context, catSnapshot) {
           final categories = catSnapshot.data ?? [];
           return StreamBuilder<List<Product>>(
-            stream: _fb.streamProducts(),
+            stream: _productsStream,
             builder: (context, prodSnapshot) {
               if (prodSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator(color: AppTheme.primary));

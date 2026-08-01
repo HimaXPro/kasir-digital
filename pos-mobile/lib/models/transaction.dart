@@ -51,6 +51,7 @@ class Transaction {
   final List<CartItem>? items;
   final String? customerName;
   final String? orderNote;
+  final String? cashierName;
 
   Transaction({
     required this.id,
@@ -62,6 +63,7 @@ class Transaction {
     this.items,
     this.customerName,
     this.orderNote,
+    this.cashierName,
   });
 
   factory Transaction.fromFirestore(Map<String, dynamic> json, String docId) {
@@ -82,6 +84,7 @@ class Transaction {
       items: itemsList,
       customerName: json['customer_name'] as String?,
       orderNote: json['order_note'] as String?,
+      cashierName: json['cashier_name'] as String?,
     );
   }
 
@@ -94,5 +97,6 @@ class Transaction {
         'items': items?.map((item) => item.toFirestore()).toList() ?? [],
         if (customerName != null) 'customer_name': customerName,
         if (orderNote != null) 'order_note': orderNote,
+        if (cashierName != null) 'cashier_name': cashierName,
       };
 }

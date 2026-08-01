@@ -498,7 +498,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            dateStr,
+                            '${t.cashierName ?? "Kasir"} • $dateStr',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               color: AppTheme.textMuted,

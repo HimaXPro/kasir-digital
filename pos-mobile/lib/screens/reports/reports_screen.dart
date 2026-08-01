@@ -421,7 +421,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                           style: GoogleFonts.inter(
                                               fontSize: 13, fontWeight: FontWeight.w700,
                                               color: AppTheme.primary)),
-                                      Text(dateStr,
+                                      Text('${t.cashierName ?? "Kasir"} • $dateStr',
                                           style: GoogleFonts.inter(
                                               fontSize: 11, color: AppTheme.textMuted)),
                                     ],

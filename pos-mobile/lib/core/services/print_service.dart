@@ -47,7 +47,7 @@ class PrintService {
     
     bluetooth.printLeftRight("No:", transactionData['invoice_number'] ?? '-', 0);
     bluetooth.printLeftRight("Tgl:", transactionData['created_at'] ?? '-', 0);
-    bluetooth.printLeftRight("Kasir:", "Admin", 0);
+    bluetooth.printLeftRight("Kasir:", transactionData['cashier_name']?.toString() ?? 'Kasir', 0);
     if (transactionData['customer_name'] != null && transactionData['customer_name'].toString().isNotEmpty) {
       bluetooth.printLeftRight("Pelanggan:", transactionData['customer_name'].toString(), 0);
     }
