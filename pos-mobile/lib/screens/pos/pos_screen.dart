@@ -40,6 +40,7 @@ class _PosScreenState extends State<PosScreen> {
 
   late Stream<List<Category>> _categoriesStream;
   late Stream<List<Product>> _productsStream;
+  List<Product> _allProducts = [];
 
   @override
   void initState() {
@@ -93,6 +94,13 @@ class _PosScreenState extends State<PosScreen> {
         if (qty <= 0) {
           _cart.removeAt(idx);
         } else {
+          final pIdx = _allProducts.indexWhere((p) => p.id == productId);
+          if (pIdx >= 0 && qty > _allProducts[pIdx].stock) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Stok hanya ${_allProducts[pIdx].stock} unit')),
+            );
+            return;
+          }
           _cart[idx].quantity = qty;
         }
       }
@@ -335,6 +343,7 @@ class _PosScreenState extends State<PosScreen> {
               }
 
               var products = prodSnapshot.data ?? [];
+              _allProducts = products;
 
               // Local Filtering
               if (_search.isNotEmpty) {

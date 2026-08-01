@@ -35,6 +35,41 @@ class _CartScreenState extends State<CartScreen> {
   double get _total =>
       (_currentSubtotal - _discount).clamp(0, double.infinity);
 
+  void _showQuantityDialog(tr.CartItem item) {
+    final ctrl = TextEditingController(text: item.quantity.toString());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Atur Jumlah: ${item.productName}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Masukkan jumlah',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () {
+              final val = int.tryParse(ctrl.text) ?? 0;
+              widget.onUpdateQty(item.productId, val);
+              setState(() {});
+              Navigator.pop(ctx);
+              if (widget.cart.isEmpty) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _discCtrl.dispose();
@@ -182,13 +217,21 @@ class _CartScreenState extends State<CartScreen> {
                                 item.productId, item.quantity - 1);
                             setState(() {});
                           }),
-                          Container(
-                            width: 36,
-                            alignment: Alignment.center,
-                            child: Text('${item.quantity}',
-                                style: GoogleFonts.inter(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700)),
+                          GestureDetector(
+                            onTap: () => _showQuantityDialog(item),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('${item.quantity}',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700)),
+                            ),
                           ),
                           _qtyBtn(Icons.add, () {
                             widget.onUpdateQty(
