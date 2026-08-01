@@ -468,15 +468,10 @@ class _PosScreenState extends State<PosScreen> {
       );
     }
 
-    return GridView.builder(
+    return ListView.separated(
       padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.85,
-      ),
       itemCount: products.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, i) => _buildProductCard(products[i]),
     );
   }
@@ -493,6 +488,7 @@ class _PosScreenState extends State<PosScreen> {
       onTap: () => _addToCart(product),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -502,57 +498,52 @@ class _PosScreenState extends State<PosScreen> {
           ),
           boxShadow: const [AppTheme.shadowSm],
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                  ? Image(
+                      image: getImageProvider(product.imageUrl!),
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: 70,
+                      height: 70,
+                      color: _colors[colorIdx],
+                      child: Center(
+                        child: Text(_emojis[emojiIdx],
+                            style: const TextStyle(fontSize: 32)),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 14),
+            // Details
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                    Container(
-                      height: 56,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        image: DecorationImage(
-                          image: getImageProvider(product.imageUrl!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    )
-                  else
-                    Container(
-                      height: 56,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: _colors[colorIdx],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(_emojis[emojiIdx],
-                            style: const TextStyle(fontSize: 28)),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
                   Text(
                     product.name,
                     style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     formatRupiah(product.sellingPrice),
                     style: GoogleFonts.inter(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.primary),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Container(
@@ -571,7 +562,7 @@ class _PosScreenState extends State<PosScreen> {
                       Text(
                         isOutOfStock ? 'Habis' : 'Stok: ${product.stock}',
                         style: GoogleFonts.inter(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: product.stock > 10
                               ? AppTheme.success
                               : product.stock > 0
@@ -585,49 +576,48 @@ class _PosScreenState extends State<PosScreen> {
                 ],
               ),
             ),
+            // Cart Info / Add Button
             if (isOutOfStock)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(160),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.danger,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text('HABIS',
-                          style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800)),
-                    ),
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.danger.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ),
-            if (inCart && !isOutOfStock)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text('$cartQty',
+                child: Text('HABIS',
+                    style: GoogleFonts.inter(
+                        color: AppTheme.danger,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800)),
+              )
+            else if (inCart)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_cart, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text('$cartQty',
                         style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800)),
-                  ),
+                  ],
                 ),
+              )
+            else
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: AppTheme.primary, size: 18),
               ),
           ],
         ),
