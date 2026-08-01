@@ -235,6 +235,51 @@ class _ProductsScreenState extends State<ProductsScreen> {
       );
     }
 
+    if (_filterCatId == null && _search.isEmpty) {
+      final Map<String, List<Product>> grouped = {};
+      for (var p in products) {
+        grouped.putIfAbsent(p.categoryId ?? '', () => []).add(p);
+      }
+
+      final List<dynamic> listItems = [];
+      for (var cat in categories) {
+        if (grouped.containsKey(cat.id)) {
+          listItems.add(cat.name);
+          listItems.addAll(grouped[cat.id]!);
+          grouped.remove(cat.id);
+        }
+      }
+      if (grouped.containsKey('')) {
+        listItems.add('Tanpa Kategori');
+        listItems.addAll(grouped['']!);
+      }
+      for (var key in grouped.keys) {
+        if (key != '') {
+          listItems.add('Kategori Lainnya');
+          listItems.addAll(grouped[key]!);
+        }
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+        itemCount: listItems.length,
+        itemBuilder: (ctx, i) {
+          final item = listItems[i];
+          if (item is String) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 8, left: 4),
+              child: Text(item, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            );
+          } else {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildProductTile(item as Product, categories),
+            );
+          }
+        },
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
       itemCount: products.length,
@@ -595,6 +640,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Widget _buildImagePicker() {
+    final hasImage = _imageFile != null || (_existingImageUrl != null && _existingImageUrl!.isNotEmpty);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -614,22 +660,42 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: _imageFile != null
-                  ? Image.file(_imageFile!, fit: BoxFit.cover)
-                  : (_existingImageUrl != null && _existingImageUrl!.isNotEmpty)
-                      ? Image(image: getImageProvider(_existingImageUrl!), fit: BoxFit.cover)
-                      : Column(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_imageFile != null)
+                    Image.file(_imageFile!, fit: BoxFit.cover)
+                  else if (_existingImageUrl != null && _existingImageUrl!.isNotEmpty)
+                    Image(image: getImageProvider(_existingImageUrl!), fit: BoxFit.cover),
+                  if (hasImage)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      child: Center(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.add_a_photo_outlined, color: AppTheme.textMuted),
+                            const Icon(Icons.edit, color: Colors.white, size: 24),
                             const SizedBox(height: 4),
-                            Text('Pilih Foto',
-                                style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.textMuted)),
+                            Text('Ganti Foto', style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                           ],
                         ),
+                      ),
+                    )
+                  else
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add_a_photo_outlined, color: AppTheme.textMuted),
+                        const SizedBox(height: 4),
+                        Text('Pilih Foto',
+                            style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textMuted)),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),

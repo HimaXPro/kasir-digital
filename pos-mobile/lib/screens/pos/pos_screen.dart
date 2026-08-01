@@ -337,7 +337,7 @@ class _PosScreenState extends State<PosScreen> {
               return Column(
                 children: [
                   _buildSearchAndFilter(categories),
-                  Expanded(child: _buildProductGrid(products)),
+                  Expanded(child: _buildProductList(products, categories)),
                 ],
               );
             },
@@ -452,7 +452,7 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
-  Widget _buildProductGrid(List<Product> products) {
+  Widget _buildProductList(List<Product> products, List<Category> categories) {
     if (products.isEmpty) {
       return Center(
         child: Column(
@@ -465,6 +465,51 @@ class _PosScreenState extends State<PosScreen> {
                     color: AppTheme.textSecondary, fontSize: 14)),
           ],
         ),
+      );
+    }
+
+    if (_selectedCatId == null && _search.isEmpty) {
+      final Map<String, List<Product>> grouped = {};
+      for (var p in products) {
+        grouped.putIfAbsent(p.categoryId ?? '', () => []).add(p);
+      }
+
+      final List<dynamic> listItems = [];
+      for (var cat in categories) {
+        if (grouped.containsKey(cat.id)) {
+          listItems.add(cat.name);
+          listItems.addAll(grouped[cat.id]!);
+          grouped.remove(cat.id);
+        }
+      }
+      if (grouped.containsKey('')) {
+        listItems.add('Tanpa Kategori');
+        listItems.addAll(grouped['']!);
+      }
+      for (var key in grouped.keys) {
+        if (key != '') {
+          listItems.add('Kategori Lainnya');
+          listItems.addAll(grouped[key]!);
+        }
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: listItems.length,
+        itemBuilder: (ctx, i) {
+          final item = listItems[i];
+          if (item is String) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 8, left: 4),
+              child: Text(item, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            );
+          } else {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildProductCard(item as Product),
+            );
+          }
+        },
       );
     }
 
