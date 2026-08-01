@@ -143,11 +143,7 @@ class FirebaseService {
   }
 
   Future<DocumentReference> addTransaction(tr.Transaction transaction) async {
-    final txData = transaction.toFirestore();
-    // Add expires_at for TTL (1 year from now)
-    txData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
-    
-    final docRef = await _cityRef('transactions').add(txData);
+    final docRef = await _cityRef('transactions').add(transaction.toFirestore());
     
     // Decrease stock for each item
     for (var item in transaction.items ?? []) {
