@@ -35,14 +35,25 @@ class FirebaseService {
 
   // === CATEGORIES ===
   Stream<List<Category>> streamCategories() {
-    return _cityRef('categories').snapshots().map((snapshot) => snapshot
-        .docs
-        .map((doc) => Category.fromFirestore(doc.data(), doc.id))
-        .toList());
+    return _cityRef('categories').snapshots().map((snapshot) {
+      final list = snapshot.docs
+          .map((doc) => Category.fromFirestore(doc.data(), doc.id))
+          .toList();
+      // Sort locally so that categories without sortOrder (default 0) are still returned
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      return list;
+    });
   }
 
   Future<void> addCategory(Category category) async {
-    await _cityRef('categories').add(category.toFirestore());
+    final snapshot = await _cityRef('categories').orderBy('sortOrder', descending: true).limit(1).get();
+    int nextOrder = 0;
+    if (snapshot.docs.isNotEmpty) {
+      final lastCategory = Category.fromFirestore(snapshot.docs.first.data(), snapshot.docs.first.id);
+      nextOrder = lastCategory.sortOrder + 1;
+    }
+    final newCategory = Category(id: '', name: category.name, sortOrder: nextOrder);
+    await _cityRef('categories').add(newCategory.toFirestore());
   }
 
   Future<void> updateCategory(Category category) async {
@@ -53,6 +64,15 @@ class FirebaseService {
 
   Future<void> deleteCategory(String id) async {
     await _cityRef('categories').doc(id).delete();
+  }
+
+  Future<void> reorderCategories(List<Category> categories) async {
+    final batch = _db.batch();
+    for (int i = 0; i < categories.length; i++) {
+      final ref = _cityRef('categories').doc(categories[i].id);
+      batch.update(ref, {'sortOrder': i});
+    }
+    await batch.commit();
   }
 
   // === PRODUCTS ===

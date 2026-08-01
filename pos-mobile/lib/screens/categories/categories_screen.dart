@@ -187,7 +187,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             );
           }
           
-          final categories = snapshot.data ?? [];
+          final categories = List<Category>.from(snapshot.data ?? []);
           
           if (categories.isEmpty) {
             return Center(
@@ -204,13 +204,23 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             );
           }
           
-          return ListView.separated(
+          return ReorderableListView.builder(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
             itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            onReorder: (oldIndex, newIndex) {
+              if (newIndex > oldIndex) {
+                newIndex -= 1;
+              }
+              final item = categories.removeAt(oldIndex);
+              categories.insert(newIndex, item);
+              
+              _fb.reorderCategories(categories);
+            },
             itemBuilder: (ctx, i) {
               final cat = categories[i];
               return Container(
+                key: ValueKey(cat.id),
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
@@ -218,15 +228,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   boxShadow: const [AppTheme.shadowSm],
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.category_outlined, color: AppTheme.primary, size: 22),
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: const Icon(Icons.drag_indicator, color: AppTheme.textMuted),
                   title: Text(cat.name,
                       style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
                   trailing: Row(
