@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/firebase_service.dart';
@@ -10,10 +11,25 @@ import '../../core/utils/formatters.dart';
 import '../../models/transaction.dart' as tr;
 import '../pos/widgets/receipt_dialog.dart';
 
-class AllTransactionsScreen extends StatelessWidget {
+class AllTransactionsScreen extends StatefulWidget {
   final String timeline;
 
   const AllTransactionsScreen({super.key, required this.timeline});
+
+  @override
+  State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
+}
+
+class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
+  late String _selectedTimeline;
+  int _currentPage = 0;
+  final int _itemsPerPage = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTimeline = widget.timeline;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +39,35 @@ class AllTransactionsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Semua Transaksi'),
         elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: DropdownButton<String>(
+              value: _selectedTimeline,
+              dropdownColor: Colors.white,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.primary),
+              underline: const SizedBox(),
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primary),
+              items: const [
+                DropdownMenuItem(value: 'daily', child: Text('Harian')),
+                DropdownMenuItem(value: 'weekly', child: Text('Mingguan')),
+                DropdownMenuItem(value: 'monthly', child: Text('Bulanan')),
+                DropdownMenuItem(value: 'yearly', child: Text('Tahunan')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _selectedTimeline = val;
+                    _currentPage = 0; // Reset page when timeline changes
+                  });
+                }
+              },
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<Map<String, dynamic>>(
-        stream: fb.streamDashboardStats(isDashboard: false, timeline: timeline),
+        stream: fb.streamDashboardStats(isDashboard: false, timeline: _selectedTimeline),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
@@ -35,18 +77,24 @@ class AllTransactionsScreen extends StatelessWidget {
           }
 
           final data = snapshot.data!;
-          final recentTrx = data['recent_transactions'] as List;
+          final allTrx = data['recent_transactions'] as List;
 
-          if (recentTrx.isEmpty) {
+          if (allTrx.isEmpty) {
             return Center(
               child: Text('Belum ada transaksi', style: GoogleFonts.inter(color: AppTheme.textSecondary)),
             );
           }
 
+          // Calculate Pagination
+          final int totalPages = (allTrx.length / _itemsPerPage).ceil();
+          final int startIndex = _currentPage * _itemsPerPage;
+          final int endIndex = min(startIndex + _itemsPerPage, allTrx.length);
+          final paginatedTrx = allTrx.sublist(startIndex, endIndex);
+
           List<Widget> trxListWidgets = [];
           String? currentMonthStr;
           
-          for (var trx in recentTrx) {
+          for (var trx in paginatedTrx) {
             final t = trx as tr.Transaction;
             String dateStr = t.createdAt;
             String monthHeader = '';
@@ -143,9 +191,64 @@ class AllTransactionsScreen extends StatelessWidget {
             );
           }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: trxListWidgets,
+          return Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: trxListWidgets,
+                ),
+              ),
+              // Pagination Controls
+              if (totalPages > 1)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: AppTheme.border)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _currentPage > 0
+                            ? () => setState(() => _currentPage--)
+                            : null,
+                        icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                        label: Text('Sebelumnya', style: GoogleFonts.inter(fontSize: 13)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primary,
+                          disabledForegroundColor: AppTheme.textMuted,
+                        ),
+                      ),
+                      Text(
+                        'Hal ${_currentPage + 1} dari $totalPages',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _currentPage < totalPages - 1
+                            ? () => setState(() => _currentPage++)
+                            : null,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primary,
+                          disabledForegroundColor: AppTheme.textMuted,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Selanjutnya', style: GoogleFonts.inter(fontSize: 13)),
+                            const Icon(Icons.chevron_right_rounded, size: 20),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           );
         },
       ),
