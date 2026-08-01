@@ -8,6 +8,7 @@ class Product {
   final double costPrice;
   final double sellingPrice;
   final int stock;
+  final String? imageUrl;
   final Category? category;
 
   Product({
@@ -18,6 +19,7 @@ class Product {
     required this.costPrice,
     required this.sellingPrice,
     required this.stock,
+    this.imageUrl,
     this.category,
   });
 
@@ -29,6 +31,7 @@ class Product {
         costPrice: double.tryParse(json['cost_price'].toString()) ?? 0,
         sellingPrice: double.tryParse(json['selling_price'].toString()) ?? 0,
         stock: int.tryParse(json['stock'].toString()) ?? 0,
+        imageUrl: json['image_url'] as String?,
         category: category,
       );
 
@@ -39,6 +42,7 @@ class Product {
         'cost_price': costPrice,
         'selling_price': sellingPrice,
         'stock': stock,
+        if (imageUrl != null) 'image_url': imageUrl,
       };
 
   Product copyWith({
@@ -49,6 +53,7 @@ class Product {
     double? costPrice,
     double? sellingPrice,
     int? stock,
+    String? imageUrl,
     Category? category,
   }) =>
       Product(
@@ -59,6 +64,7 @@ class Product {
         costPrice: costPrice ?? this.costPrice,
         sellingPrice: sellingPrice ?? this.sellingPrice,
         stock: stock ?? this.stock,
+        imageUrl: imageUrl ?? this.imageUrl,
         category: category ?? this.category,
       );
 }

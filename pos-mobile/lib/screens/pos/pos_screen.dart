@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/image_helper.dart';
 import '../../core/services/print_service.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
@@ -14,6 +15,8 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/services/payment_service.dart';
 import 'widgets/receipt_dialog.dart';
 import 'widgets/qris_dialog.dart';
+import 'cart_screen.dart';
+import 'payment_screen.dart';
 
 class PosScreen extends StatefulWidget {
   const PosScreen({super.key});
@@ -62,6 +65,7 @@ class _PosScreenState extends State<PosScreen> {
           productName: product.name,
           price: product.sellingPrice,
           costPrice: product.costPrice,
+          imageUrl: product.imageUrl,
         ));
       }
     });
@@ -94,12 +98,10 @@ class _PosScreenState extends State<PosScreen> {
       );
       return;
     }
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => KeyboardPadding(
-        child: _CartBottomSheet(
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CartScreen(
           cart: _cart,
           onRemove: _removeFromCart,
           onUpdateQty: _updateQty,
@@ -110,17 +112,14 @@ class _PosScreenState extends State<PosScreen> {
           onCheckout: _openPayment,
         ),
       ),
-    );
+    ).then((_) => setState(() {}));
   }
 
   void _openPayment(double discount) {
-    Navigator.pop(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => KeyboardPadding(
-        child: _PaymentBottomSheet(
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
           subtotal: _subtotal,
           discount: discount,
           onPay: _processPayment,
@@ -131,7 +130,7 @@ class _PosScreenState extends State<PosScreen> {
 
   Future<void> _processPayment(
       String method, double payAmount, double discount, String customerName, String orderNote) async {
-    Navigator.pop(context);
+    Navigator.popUntil(context, (route) => route.isFirst);
     try {
       final now = DateTime.now();
       final invoice = 'INV-${now.millisecondsSinceEpoch}';
@@ -510,17 +509,31 @@ class _PosScreenState extends State<PosScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: _colors[colorIdx],
-                      borderRadius: BorderRadius.circular(10),
+                  if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                    Container(
+                      height: 56,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          image: getImageProvider(product.imageUrl!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      height: 56,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: _colors[colorIdx],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(_emojis[emojiIdx],
+                            style: const TextStyle(fontSize: 28)),
+                      ),
                     ),
-                    child: Center(
-                      child: Text(_emojis[emojiIdx],
-                          style: const TextStyle(fontSize: 28)),
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     product.name,
@@ -623,594 +636,3 @@ class _PosScreenState extends State<PosScreen> {
   }
 }
 
-// ── Cart Bottom Sheet ──────────────────────────────────────────────────────
-class _CartBottomSheet extends StatefulWidget {
-  final List<tr.CartItem> cart;
-  final void Function(String) onRemove;
-  final void Function(String, int) onUpdateQty;
-  final void Function(String, String) onUpdateItemNote;
-  final void Function(double) onCheckout;
-
-  const _CartBottomSheet({
-    required this.cart,
-    required this.onRemove,
-    required this.onUpdateQty,
-    required this.onUpdateItemNote,
-    required this.onCheckout,
-  });
-
-  @override
-  State<_CartBottomSheet> createState() => _CartBottomSheetState();
-}
-
-class _CartBottomSheetState extends State<_CartBottomSheet> {
-  double _discount = 0;
-  final _discCtrl = TextEditingController(text: '0');
-
-  double get _currentSubtotal => widget.cart.fold(0, (sum, c) => sum + c.subtotal);
-
-  double get _total =>
-      (_currentSubtotal - _discount).clamp(0, double.infinity);
-
-  @override
-  void dispose() {
-    _discCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                const Icon(Icons.shopping_cart_rounded,
-                    color: AppTheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Text('Keranjang',
-                    style: GoogleFonts.inter(
-                        fontSize: 16, fontWeight: FontWeight.w800)),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${widget.cart.length} item',
-                    style: GoogleFonts.inter(
-                        color: AppTheme.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.35,
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: widget.cart.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 1, indent: 20, endIndent: 20),
-              itemBuilder: (ctx, i) {
-                final item = widget.cart[i];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.productName,
-                                style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600),
-                                overflow: TextOverflow.ellipsis),
-                            Text(formatRupiah(item.price),
-                                style: GoogleFonts.inter(
-                                    color: AppTheme.textMuted, fontSize: 12)),
-                            const SizedBox(height: 6),
-                            TextFormField(
-                              initialValue: item.note,
-                              style: GoogleFonts.inter(fontSize: 12),
-                              decoration: InputDecoration(
-                                hintText: 'Tambah catatan (opsional)...',
-                                hintStyle: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(color: AppTheme.border),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(color: AppTheme.border),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(color: AppTheme.primary),
-                                ),
-                              ),
-                              onChanged: (val) => widget.onUpdateItemNote(item.productId, val),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Row(
-                        children: [
-                          _qtyBtn(Icons.remove, () {
-                            widget.onUpdateQty(
-                                item.productId, item.quantity - 1);
-                            setState(() {});
-                          }),
-                          Container(
-                            width: 36,
-                            alignment: Alignment.center,
-                            child: Text('${item.quantity}',
-                                style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700)),
-                          ),
-                          _qtyBtn(Icons.add, () {
-                            widget.onUpdateQty(
-                                item.productId, item.quantity + 1);
-                            setState(() {});
-                          }),
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () {
-                              widget.onRemove(item.productId);
-                              setState(() {});
-                              if (widget.cart.isEmpty) {
-                                Navigator.pop(ctx);
-                              }
-                            },
-                            child: const Icon(
-                                Icons.delete_outline_rounded,
-                                color: AppTheme.danger,
-                                size: 18),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Subtotal',
-                        style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary, fontSize: 13)),
-                    Text(formatRupiah(_currentSubtotal),
-                        style: GoogleFonts.inter(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text('Diskon (Rp)',
-                        style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary, fontSize: 13)),
-                    const Spacer(),
-                    SizedBox(
-                      width: 100,
-                      child: TextField(
-                        controller: _discCtrl,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.right,
-                        style: GoogleFonts.inter(
-                            fontSize: 13, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 8),
-                        ),
-                        onChanged: (v) => setState(
-                            () => _discount = double.tryParse(v) ?? 0),
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('TOTAL',
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.textPrimary)),
-                    Text(formatRupiah(_total),
-                        style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.primary)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () => widget.onCheckout(_discount),
-                    icon: const Icon(Icons.payment_rounded, size: 18),
-                    label: Text('Bayar ${formatRupiah(_total)}',
-                        style: GoogleFonts.inter(
-                            fontSize: 14, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.success,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _qtyBtn(IconData icon, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: AppTheme.bodyBg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppTheme.border),
-          ),
-          child: Icon(icon, size: 14, color: AppTheme.textPrimary),
-        ),
-      );
-}
-
-// ── Payment Bottom Sheet ───────────────────────────────────────────────────
-class _PaymentBottomSheet extends StatefulWidget {
-  final double subtotal;
-  final double discount;
-  final void Function(String method, double pay, double discount, String customerName, String orderNote) onPay;
-
-  const _PaymentBottomSheet({
-    required this.subtotal,
-    required this.discount,
-    required this.onPay,
-  });
-
-  @override
-  State<_PaymentBottomSheet> createState() => _PaymentBottomSheetState();
-}
-
-class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
-  String _method = 'cash';
-  double _payAmount = 0;
-  final _payCtrl = TextEditingController();
-  final _customerNameCtrl = TextEditingController();
-  final _orderNoteCtrl = TextEditingController();
-
-  double get _total =>
-      (widget.subtotal - widget.discount).clamp(0, double.infinity);
-  double get _change => (_payAmount - _total).clamp(0, double.infinity);
-  bool get _isValid => _method != 'cash' || _payAmount >= _total;
-
-  static const List<Map<String, dynamic>> _methods = [
-    {'key': 'cash', 'label': 'Cash', 'icon': Icons.payments_outlined},
-    {'key': 'qris', 'label': 'QRIS', 'icon': Icons.qr_code_scanner_rounded},
-  ];
-
-  void _setExact() {
-    setState(() {
-      _payAmount = _total;
-      _payCtrl.text = _total.toStringAsFixed(0);
-    });
-  }
-
-  @override
-  void dispose() {
-    _payCtrl.dispose();
-    _customerNameCtrl.dispose();
-    _orderNoteCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: AppTheme.border,
-                    borderRadius: BorderRadius.circular(4)),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  const Icon(Icons.payment_rounded, color: AppTheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Pembayaran', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: _methods.map((m) {
-                  final isSelected = _method == m['key'];
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _method = m['key'] as String),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        margin: const EdgeInsets.only(right: 6),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryLight
-                              : AppTheme.bodyBg,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTheme.primary
-                                : AppTheme.border,
-                            width: isSelected ? 2 : 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(m['icon'] as IconData,
-                                color: isSelected
-                                    ? AppTheme.primary
-                                    : AppTheme.textMuted,
-                                size: 18),
-                            const SizedBox(height: 3),
-                            Text(m['label'] as String,
-                                style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? AppTheme.primary
-                                        : AppTheme.textMuted)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _customerNameCtrl,
-                    style: GoogleFonts.inter(fontSize: 13),
-                    decoration: InputDecoration(
-                      labelText: 'Nama Pelanggan (Opsional)',
-                      labelStyle: GoogleFonts.inter(fontSize: 13),
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _orderNoteCtrl,
-                    style: GoogleFonts.inter(fontSize: 13),
-                    decoration: InputDecoration(
-                      labelText: 'Keterangan Pesanan (Opsional)',
-                      labelStyle: GoogleFonts.inter(fontSize: 13),
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.bodyBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('TOTAL',
-                      style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary)),
-                  Text(formatRupiah(_total),
-                      style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primary)),
-                ],
-              ),
-            ),
-            if (_method == 'cash') ...[
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Jumlah Bayar',
-                            style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600, fontSize: 13)),
-                        TextButton(
-                          onPressed: _setExact,
-                          child: Text('Uang Pas',
-                              style: GoogleFonts.inter(
-                                  color: AppTheme.accent,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ),
-                    TextField(
-                      controller: _payCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        prefixText: 'Rp ',
-                        prefixStyle: GoogleFonts.inter(
-                            fontSize: 16, color: AppTheme.textSecondary),
-                      ),
-                      onChanged: (v) => setState(
-                          () => _payAmount = double.tryParse(v) ?? 0),
-                    ),
-                    if (_payAmount > 0 && _isValid) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.successLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Kembalian',
-                                style: GoogleFonts.inter(
-                                    color: AppTheme.success,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13)),
-                            Text(formatRupiah(_change),
-                                style: GoogleFonts.inter(
-                                    color: AppTheme.success,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _isValid
-                      ? () => widget.onPay(
-                          _method,
-                          _method == 'cash' ? _payAmount : _total,
-                          widget.discount,
-                          _customerNameCtrl.text.trim(),
-                          _orderNoteCtrl.text.trim())
-                      : null,
-                  icon: const Icon(Icons.check_circle_rounded, size: 20),
-                  label: Text('Proses Pembayaran',
-                      style: GoogleFonts.inter(
-                          fontSize: 15, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.success,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class KeyboardPadding extends StatelessWidget {
-  final Widget child;
-  const KeyboardPadding({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: child,
-    );
-  }
-}

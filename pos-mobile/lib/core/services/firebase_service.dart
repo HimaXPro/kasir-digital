@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../models/app_user.dart';
@@ -18,6 +20,17 @@ class FirebaseService {
         .collection('cities')
         .doc(user.cityId)
         .collection(collectionName);
+  }
+
+  Future<String> uploadImage(File imageFile, String folder) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('provinces/${user.provinceId}/cities/${user.cityId}/$folder/$fileName');
+    
+    final uploadTask = ref.putFile(imageFile);
+    final snapshot = await uploadTask.whenComplete(() {});
+    return await snapshot.ref.getDownloadURL();
   }
 
   // === CATEGORIES ===

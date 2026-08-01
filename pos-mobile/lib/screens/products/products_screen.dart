@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/image_helper.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 
@@ -359,6 +363,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late final _stockCtrl = TextEditingController(
       text: widget.product?.stock.toString());
   String? _categoryId;
+  File? _imageFile;
+  String? _existingImageUrl;
+  final _picker = ImagePicker();
 
   bool get _isEdit => widget.product != null;
 
@@ -366,6 +373,26 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void initState() {
     super.initState();
     _categoryId = widget.product?.categoryId;
+    _existingImageUrl = widget.product?.imageUrl;
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery, 
+        imageQuality: 50,
+        maxWidth: 400,
+        maxHeight: 400,
+      );
+      if (picked != null) {
+        setState(() => _imageFile = File(picked.path));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: $e'), backgroundColor: AppTheme.danger),
+      );
+    }
   }
 
   @override
@@ -382,6 +409,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      String? imageUrl = _existingImageUrl;
+      if (_imageFile != null) {
+        // Convert the compressed file to Base64
+        final bytes = await _imageFile!.readAsBytes();
+        final base64String = base64Encode(bytes);
+        imageUrl = 'data:image/jpeg;base64,$base64String';
+      }
+
       final newProduct = Product(
         id: _isEdit ? widget.product!.id : '',
         categoryId: _categoryId,
@@ -390,6 +425,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         costPrice: double.parse(_costCtrl.text),
         sellingPrice: double.parse(_priceCtrl.text),
         stock: int.parse(_stockCtrl.text),
+        imageUrl: imageUrl,
       );
 
       if (_isEdit) {
@@ -436,6 +472,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _buildImagePicker(),
+            const SizedBox(height: 16),
             _buildSection('Informasi Dasar', [
               _buildField('Nama Produk', _nameCtrl,
                   hint: 'Contoh: Nasi Goreng Spesial',
@@ -551,6 +589,49 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 )),
           ],
           onChanged: (v) => setState(() => _categoryId = v),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Foto Produk (Opsional)',
+            style: GoogleFonts.inter(
+                fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 120,
+            width: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _imageFile != null
+                  ? Image.file(_imageFile!, fit: BoxFit.cover)
+                  : (_existingImageUrl != null && _existingImageUrl!.isNotEmpty)
+                      ? Image(image: getImageProvider(_existingImageUrl!), fit: BoxFit.cover)
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.add_a_photo_outlined, color: AppTheme.textMuted),
+                            const SizedBox(height: 4),
+                            Text('Pilih Foto',
+                                style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textMuted)),
+                          ],
+                        ),
+            ),
+          ),
         ),
       ],
     );
