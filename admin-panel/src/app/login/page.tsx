@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import styles from './page.module.css';
@@ -20,6 +20,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      await setPersistence(auth, browserSessionPersistence);
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       
       // Verify Role

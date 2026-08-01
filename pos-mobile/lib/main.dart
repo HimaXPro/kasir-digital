@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'firebase_options.dart';
@@ -12,6 +13,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Memaksa pengguna logout setiap kali aplikasi dibuka ulang dari awal (cold start)
+  await FirebaseAuth.instance.signOut();
 
   // Lock to portrait mode (optional – hapus jika ingin landscape)
   await SystemChrome.setPreferredOrientations([
