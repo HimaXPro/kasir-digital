@@ -22,18 +22,6 @@ export default function DashboardLayout({
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Cek sesi 24 jam
-        const loginTime = localStorage.getItem('loginTimestamp');
-        if (loginTime) {
-          const diff = Date.now() - parseInt(loginTime);
-          if (diff >= 24 * 60 * 60 * 1000) { // 24 jam
-            await auth.signOut();
-            localStorage.removeItem('loginTimestamp');
-            window.location.href = '/login';
-            return;
-          }
-        }
-
         const userDocRef = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
         if (!userDocRef.empty) {
           const uData = userDocRef.docs[0].data();
