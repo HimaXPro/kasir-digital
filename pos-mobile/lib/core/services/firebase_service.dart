@@ -93,7 +93,9 @@ class FirebaseService {
         note: 'Stok awal',
         createdAt: DateTime.now().toIso8601String(),
       );
-      await _cityRef('stock_movements').add(movement.toFirestore());
+      final movementData = movement.toFirestore();
+      movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+      await _cityRef('stock_movements').add(movementData);
     }
   }
 
@@ -115,7 +117,9 @@ class FirebaseService {
           note: diff > 0 ? 'Penambahan stok manual' : 'Penyesuaian stok manual',
           createdAt: DateTime.now().toIso8601String(),
         );
-        await _cityRef('stock_movements').add(movement.toFirestore());
+        final movementData = movement.toFirestore();
+        movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+        await _cityRef('stock_movements').add(movementData);
       }
     }
     await ref.update(product.toFirestore());
@@ -143,7 +147,9 @@ class FirebaseService {
   }
 
   Future<DocumentReference> addTransaction(tr.Transaction transaction) async {
-    final docRef = await _cityRef('transactions').add(transaction.toFirestore());
+    final txData = transaction.toFirestore();
+    txData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+    final docRef = await _cityRef('transactions').add(txData);
     
     // Decrease stock for each item
     for (var item in transaction.items ?? []) {
@@ -164,7 +170,9 @@ class FirebaseService {
         note: 'Penjualan #${transaction.invoiceNumber}',
         createdAt: DateTime.now().toIso8601String(),
       );
-      await _cityRef('stock_movements').add(movement.toFirestore());
+      final movementData = movement.toFirestore();
+      movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+      await _cityRef('stock_movements').add(movementData);
     }
     return docRef;
   }
