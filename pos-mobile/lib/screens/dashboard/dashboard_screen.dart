@@ -90,19 +90,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final topProducts = data['top_products'] as List;
     final recentTrx = data['recent_transactions'] as List;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildPageHeader(),
-        const SizedBox(height: 16),
-        _buildKpiGrid(kpi),
-        const SizedBox(height: 16),
-        _buildRevenueChart(chartDays),
-        const SizedBox(height: 12),
-        _buildTopProducts(topProducts),
-        const SizedBox(height: 12),
-        _buildRecentTransactions(recentTrx),
-        const SizedBox(height: 80),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          sliver: SliverList.list(
+            children: [
+              _buildPageHeader(),
+              const SizedBox(height: 16),
+              _buildKpiGrid(kpi),
+              const SizedBox(height: 16),
+              _buildRevenueChart(chartDays),
+              const SizedBox(height: 16),
+              _buildTopProducts(topProducts),
+            ],
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          sliver: SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildRecentTransactions(recentTrx),
+          ),
+        ),
       ],
     );
   }
