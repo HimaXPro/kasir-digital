@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../../models/app_user.dart';
 
@@ -20,7 +21,25 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      _currentUser = await _authService.getCurrentAppUser();
+      final prefs = await SharedPreferences.getInstance();
+      final loginTime = prefs.getInt('login_timestamp');
+      
+      if (loginTime != null) {
+        final loginDate = DateTime.fromMillisecondsSinceEpoch(loginTime);
+        final now = DateTime.now();
+        final difference = now.difference(loginDate).inHours;
+        
+        if (difference >= 24) {
+          // Sesi sudah kadaluarsa (lebih dari 24 jam)
+          await _authService.logout();
+          await prefs.remove('login_timestamp');
+          _currentUser = null;
+        } else {
+          _currentUser = await _authService.getCurrentAppUser();
+        }
+      } else {
+        _currentUser = await _authService.getCurrentAppUser();
+      }
     } catch (e) {
       _currentUser = null;
     }
@@ -31,11 +50,15 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     _currentUser = await _authService.loginWithProfile(email, password);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('login_timestamp', DateTime.now().millisecondsSinceEpoch);
     notifyListeners();
   }
 
   Future<void> logout() async {
     await _authService.logout();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('login_timestamp');
     _currentUser = null;
     notifyListeners();
   }
