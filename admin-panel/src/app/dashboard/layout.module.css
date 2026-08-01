@@ -2,6 +2,7 @@
   display: flex;
   min-height: 100vh;
   background-color: var(--bg-color);
+  flex-direction: column; /* Mobile first */
 }
 
 .sidebar {
@@ -11,6 +12,17 @@
   display: flex;
   flex-direction: column;
   padding: 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.sidebarOpen {
+  transform: translateX(0);
 }
 
 .logo {
@@ -73,6 +85,75 @@
 
 .mainContent {
   flex: 1;
-  padding: 40px;
+  padding: 20px;
   overflow-y: auto;
+  margin-top: 60px; /* Space for topbar on mobile */
+  width: 100%;
+}
+
+.mobileTopbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 90;
+}
+
+.logoMobile h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+.menuToggle {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mobileOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 95;
+  backdrop-filter: blur(2px);
+}
+
+@media (min-width: 769px) {
+  .dashboardContainer {
+    flex-direction: row;
+  }
+  
+  .mobileTopbar {
+    display: none;
+  }
+  
+  .sidebar {
+    position: static;
+    transform: translateX(0);
+    height: auto;
+  }
+  
+  .mainContent {
+    margin-top: 0;
+    padding: 40px;
+  }
+  
+  .mobileOverlay {
+    display: none;
+  }
 }

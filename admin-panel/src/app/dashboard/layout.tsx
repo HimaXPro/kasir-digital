@@ -17,6 +17,7 @@ export default function DashboardLayout({
   const [role, setRole] = useState('');
   const [title, setTitle] = useState('Memuat...');
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -39,24 +40,46 @@ export default function DashboardLayout({
 
   return (
     <div className={`${styles.dashboardContainer} ${inter.className}`}>
+      
+      {/* Mobile Topbar */}
+      <div className={styles.mobileTopbar}>
+        <div className={styles.logoMobile}>
+          <h2>Kasir Digital</h2>
+        </div>
+        <button 
+          className={styles.menuToggle} 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          ☰
+        </button>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      {isMobileMenuOpen && (
+        <div 
+          className={styles.mobileOverlay} 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.logo}>
           <h2>Kasir Digital</h2>
           <span className={styles.badge}>{title}</span>
         </div>
         
         <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItem}>
+          <Link href="/dashboard" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
             <span className={styles.icon}>📊</span>
             Ringkasan
           </Link>
-          <Link href="/dashboard/karyawan" className={styles.navItem}>
+          <Link href="/dashboard/karyawan" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
             <span className={styles.icon}>👥</span>
             Kelola Karyawan
           </Link>
           {role === 'superadmin' && (
-            <Link href="/dashboard/cabang" className={styles.navItem}>
+            <Link href="/dashboard/cabang" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
               <span className={styles.icon}>🏬</span>
               Cabang / Kota
             </Link>

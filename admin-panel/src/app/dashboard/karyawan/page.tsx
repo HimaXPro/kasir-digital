@@ -115,7 +115,7 @@ export default function KelolaKaryawanPage() {
 
     if (result.success) {
       (e.target as HTMLFormElement).reset();
-      loadData(callerCityId);
+      loadData(callerCityId, callerRole);
       setTimeout(() => setActiveModal(null), 1500);
     }
   };
@@ -137,7 +137,7 @@ export default function KelolaKaryawanPage() {
     setFormLoading(false);
     if (result.success) {
       (e.target as HTMLFormElement).reset();
-      loadData(callerCityId);
+      loadData(callerCityId, callerRole);
       setTimeout(() => setActiveModal(null), 1500);
     }
   };

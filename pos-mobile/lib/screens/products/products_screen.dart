@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/firebase_service.dart';
@@ -343,19 +344,26 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   color: AppTheme.primary, fontSize: 13, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 2),
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
-                Container(
-                  width: 6, height: 6,
-                  decoration: BoxDecoration(color: stockColor, shape: BoxShape.circle),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6, height: 6,
+                      decoration: BoxDecoration(color: stockColor, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      product.stock <= 0 ? 'Habis' : 'Stok: ${product.stock}',
+                      style: GoogleFonts.inter(color: stockColor, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  product.stock <= 0 ? 'Habis' : 'Stok: ${product.stock}',
-                  style: GoogleFonts.inter(color: stockColor, fontSize: 11, fontWeight: FontWeight.w600),
-                ),
-                if (categoryName != null) ...[
-                  const SizedBox(width: 8),
+                if (categoryName != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
@@ -369,7 +377,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           color: AppTheme.textSecondary),
                     ),
                   ),
-                ],
               ],
             ),
           ],
@@ -544,15 +551,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             const SizedBox(height: 16),
             _buildSection('Harga & Stok', [
               _buildField('Harga Modal (Rp)', _costCtrl,
-                  hint: '0', isNumber: true,
-                  validator: (v) => v!.isEmpty ? 'Harga modal wajib diisi' : null),
+                  hint: '0', isNumber: true, maxLength: 11,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Harga modal wajib diisi';
+                    return null;
+                  }),
               const SizedBox(height: 12),
               _buildField('Harga Jual (Rp)', _priceCtrl,
-                  hint: '0', isNumber: true,
-                  validator: (v) => v!.isEmpty ? 'Harga jual wajib diisi' : null),
+                  hint: '0', isNumber: true, maxLength: 11,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Harga jual wajib diisi';
+                    final cost = double.tryParse(_costCtrl.text.trim()) ?? 0;
+                    final price = double.tryParse(v.trim()) ?? 0;
+                    if (cost >= price) return 'Harga jual harus lebih besar dari modal';
+                    return null;
+                  }),
               const SizedBox(height: 12),
               _buildField('Stok', _stockCtrl,
-                  hint: '0', isNumber: true, isInt: true,
+                  hint: '0', isNumber: true, isInt: true, maxLength: 7,
                   validator: (v) => v!.isEmpty ? 'Stok wajib diisi' : null),
             ]),
             const SizedBox(height: 24),
@@ -598,7 +614,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Widget _buildField(String label, TextEditingController ctrl,
-      {String? hint, bool isNumber = false, bool isInt = false, String? Function(String?)? validator}) {
+      {String? hint, bool isNumber = false, bool isInt = false, int? maxLength, String? Function(String?)? validator}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -611,8 +627,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           keyboardType: isNumber
               ? (isInt ? TextInputType.number : const TextInputType.numberWithOptions(decimal: true))
               : TextInputType.text,
+          maxLength: maxLength,
+          inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
           validator: validator,
-          decoration: InputDecoration(hintText: hint),
+          decoration: InputDecoration(
+            hintText: hint,
+            counterText: '', // Hide the character counter if preferred, but it's okay to show it or hide it. I'll hide it.
+          ),
           style: GoogleFonts.inter(fontSize: 14),
         ),
       ],

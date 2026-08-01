@@ -148,15 +148,20 @@ class ReceiptDialog extends StatelessWidget {
                               ),
                             const SizedBox(height: 4),
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '${item.quantity} x ${formatRupiah(item.price)}',
-                                  style: GoogleFonts.ibmPlexMono(fontSize: 12, color: AppTheme.textSecondary),
+                                Expanded(
+                                  child: Text(
+                                    '${item.quantity} x ${formatRupiah(item.price)}',
+                                    style: GoogleFonts.ibmPlexMono(fontSize: 12, color: AppTheme.textSecondary),
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Text(
                                   formatRupiah(item.subtotal),
                                   style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.right,
                                 ),
                               ],
                             ),
