@@ -21,10 +21,8 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
-  Map<String, dynamic>? _data;
-  bool _loading = true;
-  String? _error;
-  String _timeline = 'daily';
+  String _timeline = 'daily'; // daily, weekly, monthly, yearly
+  late Stream<Map<String, dynamic>> _reportsStream;
 
   String _getTimelineTitle() {
     switch (_timeline) {
@@ -39,22 +37,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _updateStream();
   }
 
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final result = await _fb.getDashboardStats(
-        isDashboard: false,
-        timeline: _timeline,
-      );
-      setState(() => _data = result);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
+  void _updateStream() {
+    final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
+    _reportsStream = fb.streamDashboardStats(
+      isDashboard: false,
+      timeline: _timeline,
+    );
   }
 
   @override
@@ -71,8 +62,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             icon: const Icon(Icons.filter_list_rounded),
             tooltip: 'Pilih Rentang Waktu',
             onSelected: (val) {
-              setState(() => _timeline = val);
-              _load();
+              setState(() {
+                _timeline = val;
+                _updateStream();
+              });
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'daily', child: Text('Harian (Hari Ini)')),
@@ -81,10 +74,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               const PopupMenuItem(value: 'yearly', child: Text('Tahunan (365 Hari)')),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _load,
-          ),
+          // Refresh button removed since it's real-time now
         ],
       ),
       body: DefaultTabController(
@@ -101,40 +91,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ],
             ),
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                  : _error != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
-                              const SizedBox(height: 12),
-                              Text('Gagal memuat laporan',
-                                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 6),
-                              Text(_error!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: _load,
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Coba Lagi'),
-                              ),
-                            ],
-                          ),
-                        )
-                      : TabBarView(
-                          children: [
-                            RefreshIndicator(
-                              onRefresh: _load,
-                              color: AppTheme.primary,
-                              child: _buildContent(),
-                            ),
-                            _buildStockMovementsTab(),
-                          ],
-                        ),
+              child: StreamBuilder<Map<String, dynamic>>(
+                stream: _reportsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+                  }
+                  if (snapshot.hasError) {
+                    return _buildError(snapshot.error.toString());
+                  }
+                  
+                  final data = snapshot.data;
+                  if (data == null) {
+                    return _buildError('Data kosong');
+                  }
+                  
+                  return TabBarView(
+                    children: [
+                      _buildContent(data),
+                      _buildStockMovementsTab(),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -258,11 +237,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildContent() {
-    final kpi = _data!['kpi'] as Map<String, dynamic>;
-    final chartDays = _data!['chart_days'] as List;
-    final topProducts = _data!['top_products'] as List;
-    final recentTrx = _data!['recent_transactions'] as List;
+  Widget _buildError(String errorMsg) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.textMuted),
+            const SizedBox(height: 12),
+            Text('Gagal memuat laporan',
+                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(errorMsg,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
+          ],
+        ),
+      );
+
+  Widget _buildContent(Map<String, dynamic> data) {
+    final kpi = data['kpi'] as Map<String, dynamic>;
+    final chartDays = data['chart_days'] as List;
+    final topProducts = data['top_products'] as List;
+    final recentTrx = data['recent_transactions'] as List;
 
     return ListView(
       padding: const EdgeInsets.all(16),

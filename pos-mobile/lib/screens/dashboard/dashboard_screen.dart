@@ -19,29 +19,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
-  Map<String, dynamic>? _data;
-  bool _loading = true;
-  String? _error;
+  late Stream<Map<String, dynamic>> _dashboardStream;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final result = await _fb.getDashboardStats();
-      setState(() => _data = result);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
+    final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
+    _dashboardStream = fb.streamDashboardStats();
   }
 
   @override
@@ -54,26 +38,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadData,
-            tooltip: 'Refresh',
-          ),
+          // Refresh button removed since it's real-time now
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-          : _error != null
-              ? _buildError()
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  color: AppTheme.primary,
-                  child: _buildContent(),
-                ),
+      body: StreamBuilder<Map<String, dynamic>>(
+        stream: _dashboardStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+          }
+          if (snapshot.hasError) {
+            return _buildError(snapshot.error.toString());
+          }
+          
+          final data = snapshot.data;
+          if (data == null) {
+            return _buildError('Data kosong');
+          }
+          
+          return _buildContent(data);
+        },
+      ),
     );
   }
 
-  Widget _buildError() => Center(
+  Widget _buildError(String errorMsg) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -86,24 +75,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
-              Text(_error!, textAlign: TextAlign.center,
+              Text(errorMsg, textAlign: TextAlign.center,
                   style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13)),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _loadData,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Coba Lagi'),
-              ),
             ],
           ),
         ),
       );
 
-  Widget _buildContent() {
-    final kpi = _data!['kpi'] as Map<String, dynamic>;
-    final chartDays = _data!['chart_days'] as List;
-    final topProducts = _data!['top_products'] as List;
-    final recentTrx = _data!['recent_transactions'] as List;
+  Widget _buildContent(Map<String, dynamic> data) {
+    final kpi = data['kpi'] as Map<String, dynamic>;
+    final chartDays = data['chart_days'] as List;
+    final topProducts = data['top_products'] as List;
+    final recentTrx = data['recent_transactions'] as List;
 
     return ListView(
       padding: const EdgeInsets.all(16),

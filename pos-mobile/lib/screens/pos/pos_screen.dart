@@ -552,7 +552,7 @@ class _PosScreenState extends State<PosScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: inCart ? AppTheme.primary : AppTheme.border,
-            width: inCart ? 2 : 1,
+            width: 1.5,
           ),
           boxShadow: const [AppTheme.shadowSm],
         ),

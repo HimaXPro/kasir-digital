@@ -372,4 +372,158 @@ class FirebaseService {
       };
     }
   }
+
+  Stream<Map<String, dynamic>> streamDashboardStats({
+    bool isDashboard = true,
+    String timeline = 'monthly',
+  }) {
+    final now = DateTime.now();
+    DateTime startDate;
+    DateTime chartStartDate;
+    
+    if (isDashboard) {
+      startDate = DateTime(now.year, now.month, now.day);
+      chartStartDate = DateTime(now.year, now.month - 5, 1);
+      timeline = 'monthly';
+    } else {
+      switch (timeline) {
+        case 'daily':
+          startDate = DateTime(now.year, now.month, now.day);
+          chartStartDate = now.subtract(const Duration(days: 6));
+          break;
+        case 'weekly':
+          startDate = now.subtract(const Duration(days: 7));
+          chartStartDate = now.subtract(const Duration(days: 27));
+          break;
+        case 'monthly':
+          startDate = now.subtract(const Duration(days: 30));
+          chartStartDate = DateTime(now.year, now.month - 5, 1);
+          break;
+        case 'yearly':
+          startDate = now.subtract(const Duration(days: 365));
+          chartStartDate = DateTime(now.year - 4, 1, 1);
+          break;
+        default:
+          startDate = DateTime(now.year, now.month, now.day);
+          chartStartDate = now.subtract(const Duration(days: 6));
+      }
+    }
+
+    final earliestDate = startDate.isBefore(chartStartDate) ? startDate : chartStartDate;
+    final startStr = earliestDate.toIso8601String();
+
+    return _cityRef('transactions')
+        .where('created_at', isGreaterThanOrEqualTo: startStr)
+        .snapshots()
+        .asyncMap((txSnapshot) async {
+          double totalRevenue = 0;
+          double totalProfit = 0;
+          int totalSales = 0;
+          int productsSold = 0;
+          
+          Map<String, double> revenueGroup = {};
+          Map<String, int> qtyByProduct = {};
+          List<tr.Transaction> recentTransactions = [];
+
+          for (var doc in txSnapshot.docs) {
+            final data = doc.data();
+            final createdAt = data['created_at'] as String;
+            final txDate = DateTime.parse(createdAt);
+            final grandTotal = double.tryParse(data['grand_total'].toString()) ?? 0;
+            
+            if (!txDate.isBefore(chartStartDate)) {
+              String groupKey;
+              if (timeline == 'daily') {
+                groupKey = "${txDate.year}-${txDate.month.toString().padLeft(2, '0')}-${txDate.day.toString().padLeft(2, '0')}";
+              } else if (timeline == 'weekly') {
+                groupKey = "W${((txDate.day - 1) / 7).floor() + 1} ${txDate.month}";
+              } else if (timeline == 'monthly') {
+                groupKey = "${txDate.year}-${txDate.month.toString().padLeft(2, '0')}";
+              } else {
+                groupKey = "${txDate.year}";
+              }
+              revenueGroup[groupKey] = (revenueGroup[groupKey] ?? 0) + grandTotal;
+            }
+
+            if (!txDate.isBefore(startDate)) {
+              totalSales++;
+              totalRevenue += grandTotal;
+              recentTransactions.add(tr.Transaction.fromFirestore(data, doc.id));
+              
+              final items = data['items'] as List?;
+              if (items != null) {
+                for (var item in items) {
+                  final qty = item['quantity'] as int? ?? 1;
+                  final sell = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
+                  final cost = double.tryParse(item['cost_price']?.toString() ?? '0') ?? 0;
+                  
+                  productsSold += qty;
+                  totalProfit += (sell - cost) * qty;
+                  
+                  final pName = item['product_name'] as String? ?? 'Unknown';
+                  qtyByProduct[pName] = (qtyByProduct[pName] ?? 0) + qty;
+                }
+              }
+            }
+          }
+
+          List<Map<String, dynamic>> chartDays = [];
+          if (timeline == 'daily') {
+            for (int i = 6; i >= 0; i--) {
+              final d = now.subtract(Duration(days: i));
+              final key = "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
+              chartDays.add({'date': '${d.day}/${d.month}', 'revenue': revenueGroup[key] ?? 0.0});
+            }
+          } else if (timeline == 'weekly') {
+            for (int i = 3; i >= 0; i--) {
+              final d = now.subtract(Duration(days: i * 7));
+              final key = "W${((d.day - 1) / 7).floor() + 1} ${d.month}";
+              chartDays.add({'date': 'Mgg ${(3-i)+1}', 'revenue': revenueGroup[key] ?? 0.0});
+            }
+          } else if (timeline == 'monthly') {
+            for (int i = 5; i >= 0; i--) {
+              int m = now.month - i;
+              int y = now.year;
+              if (m <= 0) { m += 12; y -= 1; }
+              final key = "$y-${m.toString().padLeft(2, '0')}";
+              const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+              chartDays.add({'date': months[m-1], 'revenue': revenueGroup[key] ?? 0.0});
+            }
+          } else if (timeline == 'yearly') {
+            for (int i = 4; i >= 0; i--) {
+              final y = now.year - i;
+              final key = "$y";
+              chartDays.add({'date': key, 'revenue': revenueGroup[key] ?? 0.0});
+            }
+          }
+
+          recentTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          if (isDashboard) {
+             recentTransactions = recentTransactions.take(5).toList();
+          }
+
+          var sortedProducts = qtyByProduct.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          List<Map<String, dynamic>> topProducts = sortedProducts.take(5).map((e) => {
+            'product_name': e.key,
+            'total_qty': e.value,
+          }).toList();
+
+          final prodSnapshot = await _cityRef('products').get();
+          int totalProducts = prodSnapshot.docs.length;
+
+          return {
+            'kpi': {
+              'today_sales': totalSales,
+              'today_revenue': totalRevenue,
+              'today_profit': totalProfit,
+              'items_sold_today': productsSold,
+              'total_products': totalProducts,
+            },
+            'chart_days': chartDays,
+            'top_products': topProducts,
+            'recent_transactions': recentTransactions,
+          };
+        });
+  }
 }
