@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../login/login_screen.dart';
+import '../login/role_selection_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../pos/pos_screen.dart';
 import '../products/products_screen.dart';
@@ -22,28 +23,29 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  Future<void> _logout(BuildContext context) async {
+  Future<void> _switchRole(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Logout', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text('Ganti Peran', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
         content: Text(
-          'Apakah Anda yakin ingin keluar?',
-          style: GoogleFonts.inter(fontSize: 14),
+          'Apakah Anda ingin kembali ke layar Pilih Peran?',
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: GoogleFonts.inter(color: AppTheme.textSecondary)),
+            child: Text('Batal', style: GoogleFonts.inter(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.danger,
+              backgroundColor: AppTheme.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text('Logout', style: GoogleFonts.inter()),
+            child: Text('Ya, Ganti', style: GoogleFonts.inter()),
           ),
         ],
       ),
@@ -51,10 +53,9 @@ class _MainScreenState extends State<MainScreen> {
 
     if (confirm == true) {
       if (!mounted) return;
-      await context.read<AuthProvider>().logout();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const LoginScreen(),
+          pageBuilder: (_, __, ___) => const RoleSelectionScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 400),
@@ -353,11 +354,11 @@ class _MainScreenState extends State<MainScreen> {
                   IconButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      _logout(context);
+                      _switchRole(context);
                     },
-                    icon: const Icon(Icons.logout_rounded,
-                        color: Color(0xFF64748B), size: 18),
-                    tooltip: 'Logout',
+                    icon: const Icon(Icons.swap_horiz_rounded,
+                        color: Color(0xFF64748B), size: 24),
+                    tooltip: 'Ganti Peran',
                   ),
                 ],
               ),

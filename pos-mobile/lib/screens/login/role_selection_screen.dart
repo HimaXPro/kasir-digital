@@ -225,6 +225,35 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
   
   Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Logout', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari akun utama Koperasi?',
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.inter(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('Ya, Logout', style: GoogleFonts.inter()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isLoading = true);
     await context.read<my_auth.AuthProvider>().logout();
     if (!mounted) return;
