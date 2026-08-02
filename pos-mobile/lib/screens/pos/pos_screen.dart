@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
@@ -13,6 +15,7 @@ import '../../models/transaction.dart' as tr;
 import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/payment_service.dart';
+import '../reports/all_transactions_screen.dart';
 import 'widgets/receipt_dialog.dart';
 import 'widgets/qris_dialog.dart';
 import 'cart_screen.dart';
@@ -31,6 +34,7 @@ class _PosScreenState extends State<PosScreen> {
   String _search = '';
   String? _selectedCatId;
   final _searchCtrl = TextEditingController();
+  String _attendantName = 'Kasir';
 
   static const _emojis = ['🍜','🥤','☕','🍕','🍱','🧃','🍗','🥗','🍰','🍔','🥐','🍩'];
   static const _colors = [
@@ -48,6 +52,55 @@ class _PosScreenState extends State<PosScreen> {
     final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
     _categoriesStream = fb.streamCategories();
     _productsStream = fb.streamProducts();
+    _loadAttendantName();
+  }
+
+  Future<void> _loadAttendantName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName = prefs.getString('attendant_name');
+    if (savedName != null && savedName.isNotEmpty) {
+      setState(() => _attendantName = savedName);
+    } else {
+      final userName = context.read<AuthProvider>().currentUser?.name;
+      setState(() => _attendantName = userName ?? 'Kasir');
+    }
+  }
+
+  Future<void> _changeAttendantName() async {
+    final ctrl = TextEditingController(text: _attendantName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Kasir Bertugas', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+        content: TextField(
+          controller: ctrl,
+          decoration: const InputDecoration(
+            labelText: 'Nama Kasir',
+            hintText: 'Contoh: Hima',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty && newName != _attendantName) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('attendant_name', newName);
+      setState(() => _attendantName = newName);
+    }
   }
 
   @override
@@ -156,7 +209,6 @@ class _PosScreenState extends State<PosScreen> {
       
       final changeAmount = (payAmount - (_subtotal - discount)).clamp(0, double.infinity).toDouble();
 
-      final cashierName = context.read<AuthProvider>().currentUser?.name ?? 'Kasir';
       final transaction = tr.Transaction(
         id: '',
         invoiceNumber: invoice,
@@ -167,7 +219,7 @@ class _PosScreenState extends State<PosScreen> {
         items: List.from(_cart),
         customerName: customerName.isNotEmpty ? customerName : null,
         orderNote: orderNote.isNotEmpty ? orderNote : null,
-        cashierName: cashierName,
+        cashierName: _attendantName,
       );
 
       final addedTrx = await _fb.addTransaction(transaction);
@@ -330,6 +382,49 @@ class _PosScreenState extends State<PosScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long, color: AppTheme.primary),
+            tooltip: 'Riwayat Transaksi',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AllTransactionsScreen(timeline: 'daily'),
+                ),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0, top: 8.0, bottom: 8.0),
+            child: InkWell(
+              onTap: _changeAttendantName,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight.withAlpha(50),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.primary.withAlpha(50)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person, size: 14, color: AppTheme.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      _attendantName,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<List<Category>>(
         stream: _categoriesStream,

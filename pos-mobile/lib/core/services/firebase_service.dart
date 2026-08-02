@@ -149,17 +149,15 @@ class FirebaseService {
   Future<DocumentReference> addTransaction(tr.Transaction transaction) async {
     final txData = transaction.toFirestore();
     txData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
-    final docRef = await _cityRef('transactions').add(txData);
     
-    // Decrease stock for each item
+    // Gunakan .doc() lalu .set() tanpa await agar bisa langsung selesai (offline mode)
+    final docRef = _cityRef('transactions').doc();
+    docRef.set(txData); // Tidak di-await
+    
+    // Decrease stock for each item using FieldValue.increment to support offline mode
     for (var item in transaction.items ?? []) {
       final productRef = _cityRef('products').doc(item.productId);
-      _db.runTransaction((tx) async {
-        final snapshot = await tx.get(productRef);
-        if (!snapshot.exists) return;
-        final currentStock = snapshot.data()?['stock'] ?? 0;
-        tx.update(productRef, {'stock': currentStock - item.quantity});
-      });
+      productRef.update({'stock': FieldValue.increment(-item.quantity)});
 
       final movement = StockMovement(
         id: '',
@@ -167,13 +165,15 @@ class FirebaseService {
         productName: item.productName,
         type: 'OUT',
         quantity: item.quantity,
-        note: 'Penjualan #${transaction.invoiceNumber}',
+        note: 'Terjual (Kasir: ${transaction.cashierName})',
         createdAt: DateTime.now().toIso8601String(),
       );
-      final movementData = movement.toFirestore();
-      movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
-      await _cityRef('stock_movements').add(movementData);
+      final movData = movement.toFirestore();
+      movData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+      
+      _cityRef('stock_movements').doc().set(movData); // Tidak di-await
     }
+    
     return docRef;
   }
 
