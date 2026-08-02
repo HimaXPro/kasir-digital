@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../core/providers/auth_provider.dart';
+import '../../core/providers/auth_provider.dart' as my_auth;
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_theme.dart';
-import '../main/main_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,11 +56,11 @@ class _LoginScreenState extends State<LoginScreen>
       _errorMsg = null;
     });
     try {
-      await context.read<AuthProvider>().login(_emailCtrl.text.trim(), _passCtrl.text);
+      await context.read<my_auth.AuthProvider>().login(_emailCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainScreen(),
+          pageBuilder: (_, __, ___) => const RoleSelectionScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 400),
@@ -69,6 +70,34 @@ class _LoginScreenState extends State<LoginScreen>
       setState(() => _errorMsg = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    if (_emailCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan email Anda terlebih dahulu di kolom email!'), backgroundColor: AppTheme.warning),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailCtrl.text.trim());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Link reset password telah dikirim ke email Anda.'),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengirim email reset: ${e.toString()}'),
+          backgroundColor: AppTheme.danger,
+        ),
+      );
     }
   }
 
@@ -373,10 +402,25 @@ class _LoginScreenState extends State<LoginScreen>
                                         : Text(
                                             'Masuk',
                                             style: GoogleFonts.inter(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Lupa Password Button
+                                Center(
+                                  child: TextButton(
+                                    onPressed: _showForgotPasswordDialog,
+                                    child: Text(
+                                      'Lupa Password?',
+                                      style: GoogleFonts.inter(
+                                        color: AppTheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],

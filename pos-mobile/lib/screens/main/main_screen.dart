@@ -12,7 +12,8 @@ import '../reports/reports_screen.dart';
 import '../settings/printer_settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final String activeRole;
+  const MainScreen({super.key, this.activeRole = 'kasir'});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -67,12 +68,16 @@ class _MainScreenState extends State<MainScreen> {
     final user = context.watch<AuthProvider>().currentUser;
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
+    // Override roles based on activeRole selected in RoleSelectionScreen
+    final bool isOwner = widget.activeRole == 'owner';
+    final bool isManager = widget.activeRole == 'manager' || isOwner;
+
     // Generate allowed screens and nav items dynamically based on role
     final List<Widget> screens = [];
     final List<_NavItem> navItems = [];
     
     // 1. Dashboard (Owner only)
-    if (user.isOwner) {
+    if (isOwner) {
       screens.add(DashboardScreen(
         onBukaKasirTap: () {
           setState(() {
@@ -88,13 +93,13 @@ class _MainScreenState extends State<MainScreen> {
     navItems.add(const _NavItem(icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale, label: 'Kasir'));
 
     // 3. Products (Manager & Owner)
-    if (user.isManager || user.isOwner) {
+    if (isManager) {
       screens.add(const ProductsScreen());
       navItems.add(const _NavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: 'Produk'));
     }
 
     // 4. Reports (Owner only)
-    if (user.isOwner) {
+    if (isOwner) {
       screens.add(const ReportsScreen());
       navItems.add(const _NavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Laporan'));
     }
@@ -229,7 +234,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       Text(
-                        'Role: ${user.role.toUpperCase()}',
+                        'Role: ${widget.activeRole.toUpperCase()}',
                         style: GoogleFonts.inter(
                           color: AppTheme.sidebarText,
                           fontSize: 11,
