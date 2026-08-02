@@ -27,10 +27,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
-    if (_prefs.getString('pin_kasir') == null) {
-      await _prefs.setString('pin_kasir', '1111');
-      await _prefs.setString('pin_manager', '2222');
-      await _prefs.setString('pin_owner', '3333');
+    if (_prefs.getString('pin_kasir') == null || _prefs.getString('pin_kasir') == '1111') {
+      await _prefs.setString('pin_kasir', '111111');
+      await _prefs.setString('pin_manager', '222222');
+      await _prefs.setString('pin_owner', '333333');
     }
   }
 
@@ -78,7 +78,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    pin.padRight(4, '•').substring(0, 4),
+                    pin.padRight(6, '•').substring(0, 6),
                     style: GoogleFonts.inter(fontSize: 32, letterSpacing: 8, color: AppTheme.primary),
                   ),
                   const SizedBox(height: 24),
@@ -113,9 +113,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                             padding: EdgeInsets.zero,
                           ),
                           onPressed: () {
-                            if (pin.length < 4) {
+                            if (pin.length < 6) {
                               setState(() => pin += number.toString());
-                              if (pin.length == 4) {
+                              if (pin.length == 6) {
                                 Navigator.pop(context, pin);
                               }
                             }
@@ -135,7 +135,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context, null);
-                    _showForgotPasswordDialog();
+                    _showForgotPasswordDialog(role);
                   },
                   child: Text('Lupa PIN?', style: GoogleFonts.inter(color: AppTheme.primary)),
                 ),
@@ -148,7 +148,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     return result;
   }
 
-  Future<void> _showForgotPasswordDialog() async {
+  Future<void> _showForgotPasswordDialog(String role) async {
     final passwordCtrl = TextEditingController();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || user.email == null) return;
@@ -214,12 +214,102 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     );
 
     if (result == true) {
-      await _prefs.setString('pin_kasir', '1111');
-      await _prefs.setString('pin_manager', '2222');
-      await _prefs.setString('pin_owner', '3333');
+      if (!mounted) return;
+      await _showSetNewPinDialog(role);
+    }
+  }
+
+  Future<void> _showSetNewPinDialog(String role) async {
+    String pin = '';
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Buat PIN Baru (${role.toUpperCase()})',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Masukkan 6 digit PIN baru',
+                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    pin.padRight(6, '•').substring(0, 6),
+                    style: GoogleFonts.inter(fontSize: 32, letterSpacing: 8, color: AppTheme.success),
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(12, (index) {
+                      if (index == 9) return const SizedBox(width: 60, height: 60);
+                      if (index == 11) {
+                        return SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: TextButton(
+                            onPressed: () {
+                              if (pin.isNotEmpty) {
+                                setState(() => pin = pin.substring(0, pin.length - 1));
+                              }
+                            },
+                            child: const Icon(Icons.backspace_outlined, color: Colors.white54),
+                          ),
+                        );
+                      }
+                      final number = index == 10 ? 0 : index + 1;
+                      return SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF334155),
+                            shape: const CircleBorder(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          onPressed: () {
+                            if (pin.length < 6) {
+                              setState(() => pin += number.toString());
+                              if (pin.length == 6) {
+                                Navigator.pop(context, pin);
+                              }
+                            }
+                          },
+                          child: Text(number.toString(), style: GoogleFonts.inter(fontSize: 24, color: Colors.white)),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: Text('Batal', style: GoogleFonts.inter(color: Colors.white54)),
+                ),
+              ],
+            );
+          }
+        );
+      }
+    );
+
+    if (result != null && result.length == 6) {
+      await _prefs.setString('pin_$role', result);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN berhasil direset ke default (1111, 2222, 3333)'), backgroundColor: AppTheme.success),
+        SnackBar(content: Text('PIN baru untuk ${role.toUpperCase()} berhasil disimpan!'), backgroundColor: AppTheme.success),
       );
     }
   }
