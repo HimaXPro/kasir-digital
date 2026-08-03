@@ -26,11 +26,11 @@ export default function LoginPage() {
       const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        if (userData.role === 'admin' || userData.role === 'superadmin') {
+        if (userData.role === 'superadmin') {
           router.push('/dashboard');
         } else {
           await auth.signOut();
-          setError('Akses ditolak. Anda bukan Admin Web.');
+          setError('Akses ditolak. Web ini khusus untuk Superadmin (Pusat).');
         }
       } else {
         await auth.signOut();

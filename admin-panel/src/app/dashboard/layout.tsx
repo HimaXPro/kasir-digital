@@ -14,7 +14,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [role, setRole] = useState('');
   const [title, setTitle] = useState('Memuat...');
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,12 +21,7 @@ export default function DashboardLayout({
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const userDocRef = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-        if (!userDocRef.empty) {
-          const uData = userDocRef.docs[0].data();
-          setRole(uData.role);
-          setTitle(uData.role === 'superadmin' ? 'Superadmin' : 'Admin Cabang');
-        }
+        setTitle('Superadmin');
         setLoading(false);
       } else {
         // Redirect to login if user is not authenticated
@@ -79,30 +73,44 @@ export default function DashboardLayout({
           </Link>
           <Link href="/dashboard/karyawan" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
             <span className={styles.icon}>👥</span>
-            Kelola Karyawan
+            Manajemen PIN
           </Link>
-          {role === 'superadmin' && (
-            <Link href="/dashboard/cabang" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
-              <span className={styles.icon}>🏬</span>
-              Cabang / Kota
-            </Link>
-          )}
+          <Link href="/dashboard/cabang" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
+            <span className={styles.icon}>🏬</span>
+            Manajemen Cabang
+          </Link>
         </nav>
         
-        <div className={styles.logoutBtn}>
-          <button className="btn-primary" style={{width: '100%', background: 'var(--danger)'}} onClick={() => {
-            // Need a client component to handle logout, simplified here for layout
-            window.location.href = '/login';
+        <div className={styles.logoutBtn} style={{ paddingBottom: '24px' }}>
+          <button style={{
+            width: '100%', 
+            background: 'var(--danger)', 
+            color: 'white', 
+            border: 'none', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }} onClick={() => {
+            auth.signOut().then(() => {
+              window.location.href = '/login';
+            });
           }}>
-            Keluar
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Keluar Akses
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className={styles.mainContent}>
         {children}
       </main>
+      
     </div>
   );
 }
