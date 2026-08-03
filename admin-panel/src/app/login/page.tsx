@@ -21,7 +21,6 @@ export default function LoginPage() {
 
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      localStorage.setItem('loginTimestamp', Date.now().toString());
       
       // Verify Role
       const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
