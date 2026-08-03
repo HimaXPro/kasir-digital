@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../core/providers/auth_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/providers/auth_provider.dart' as my_auth;
 import '../../core/theme/app_theme.dart';
 import '../login/login_screen.dart';
 import '../login/role_selection_screen.dart';
@@ -64,9 +65,117 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final oldPasswordCtrl = TextEditingController();
+    final newPasswordCtrl = TextEditingController();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null || user.email == null) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool loading = false;
+        String? errorMsg;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Ganti Password', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Email: ${user.email}', style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: oldPasswordCtrl,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password Lama',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: newPasswordCtrl,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password Baru (Minimal 6 karakter)',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      errorText: errorMsg,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text('Batal', style: GoogleFonts.inter(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    if (newPasswordCtrl.text.length < 6) {
+                      setState(() => errorMsg = 'Password baru minimal 6 karakter');
+                      return;
+                    }
+                    setState(() { loading = true; errorMsg = null; });
+                    try {
+                      final cred = EmailAuthProvider.credential(email: user.email!, password: oldPasswordCtrl.text);
+                      await user.reauthenticateWithCredential(cred);
+                      await user.updatePassword(newPasswordCtrl.text);
+                      if (!context.mounted) return;
+                      Navigator.pop(context, true);
+                    } catch (e) {
+                      setState(() {
+                        loading = false;
+                        errorMsg = 'Password lama salah atau gagal mengubah: ${e.toString()}';
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Simpan'),
+                )
+              ],
+            );
+          }
+        );
+      }
+    );
+
+    if (result == true) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password berhasil diubah. Seluruh perangkat akan dilogout. Silakan login kembali.'), backgroundColor: AppTheme.success, duration: Duration(seconds: 4)),
+      );
+      await context.read<my_auth.AuthProvider>().logout();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginScreen(),
+          transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
+    final user = context.watch<my_auth.AuthProvider>().currentUser;
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     // Override roles based on activeRole selected in RoleSelectionScreen
@@ -292,6 +401,16 @@ class _MainScreenState extends State<MainScreen> {
                       );
                     },
                   ),
+                  if (widget.activeRole == 'owner') ...[
+                    _drawerItemNav(
+                      Icons.lock_reset_outlined,
+                      'Ganti Password',
+                      () {
+                        Navigator.pop(context);
+                        _showChangePasswordDialog(context);
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),

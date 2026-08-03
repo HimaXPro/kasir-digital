@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../../models/app_user.dart';
 
@@ -13,52 +13,36 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
 
   AuthProvider() {
-    _checkLoginStatus();
+    _initAuthListener();
   }
 
-  Future<void> _checkLoginStatus() async {
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final loginTime = prefs.getInt('login_timestamp');
+  void _initAuthListener() {
+    FirebaseAuth.instance.idTokenChanges().listen((User? user) async {
+      _isLoading = true;
+      notifyListeners();
       
-      if (loginTime != null) {
-        final loginDate = DateTime.fromMillisecondsSinceEpoch(loginTime);
-        final now = DateTime.now();
-        final difference = now.difference(loginDate).inHours;
-        
-        if (difference >= 24) {
-          // Sesi sudah kadaluarsa (lebih dari 24 jam)
-          await _authService.logout();
-          await prefs.remove('login_timestamp');
-          _currentUser = null;
-        } else {
-          _currentUser = await _authService.getCurrentAppUser();
-        }
+      if (user == null) {
+        _currentUser = null;
       } else {
-        _currentUser = await _authService.getCurrentAppUser();
+        try {
+          _currentUser = await _authService.getCurrentAppUser();
+        } catch (e) {
+          _currentUser = null;
+        }
       }
-    } catch (e) {
-      _currentUser = null;
-    }
-    
-    _isLoading = false;
-    notifyListeners();
+      
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   Future<void> login(String email, String password) async {
     _currentUser = await _authService.loginWithProfile(email, password);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('login_timestamp', DateTime.now().millisecondsSinceEpoch);
     notifyListeners();
   }
 
   Future<void> logout() async {
     await _authService.logout();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('login_timestamp');
     _currentUser = null;
     notifyListeners();
   }

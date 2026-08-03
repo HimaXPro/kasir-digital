@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart' as my_auth;
@@ -17,25 +17,48 @@ class RoleSelectionScreen extends StatefulWidget {
 
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   bool _isLoading = false;
-  late SharedPreferences _prefs;
 
   @override
   void initState() {
     super.initState();
-    _initPrefs();
-  }
-
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-    if (_prefs.getString('pin_kasir') == null || _prefs.getString('pin_kasir') == '1111') {
-      await _prefs.setString('pin_kasir', '111111');
-      await _prefs.setString('pin_manager', '222222');
-      await _prefs.setString('pin_owner', '333333');
-    }
   }
 
   Future<void> _handleRoleSelection(String role) async {
-    final String? expectedPin = _prefs.getString('pin_$role');
+    final user = context.read<my_auth.AuthProvider>().currentUser;
+    if (user == null) return;
+    
+    final pinDocRef = FirebaseFirestore.instance
+        .collection('provinces')
+        .doc(user.provinceId)
+        .collection('cities')
+        .doc(user.cityId)
+        .collection('settings')
+        .doc('store_pins');
+
+    setState(() => _isLoading = true);
+    String? expectedPin;
+    try {
+      final doc = await pinDocRef.get(const GetOptions(source: Source.server));
+      if (!doc.exists) {
+        // Create defaults if not exist
+        await pinDocRef.set({
+          'pin_kasir': '111111',
+          'pin_manager': '222222',
+          'pin_owner': '333333',
+        });
+        expectedPin = role == 'kasir' ? '111111' : role == 'manager' ? '222222' : '333333';
+      } else {
+        expectedPin = doc.data()?['pin_$role'];
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Koneksi internet diperlukan untuk masuk!'), backgroundColor: AppTheme.danger),
+      );
+      return;
+    }
+    setState(() => _isLoading = false);
     
     final enteredPin = await _showPinDialog(role);
     if (enteredPin == null) return; // cancelled
@@ -306,11 +329,34 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     );
 
     if (result != null && result.length == 6) {
-      await _prefs.setString('pin_$role', result);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PIN baru untuk ${role.toUpperCase()} berhasil disimpan!'), backgroundColor: AppTheme.success),
-      );
+      final user = context.read<my_auth.AuthProvider>().currentUser;
+      if (user == null) return;
+      
+      final pinDocRef = FirebaseFirestore.instance
+          .collection('provinces')
+          .doc(user.provinceId)
+          .collection('cities')
+          .doc(user.cityId)
+          .collection('settings')
+          .doc('store_pins');
+
+      setState(() => _isLoading = true);
+      try {
+        await pinDocRef.set({
+          'pin_$role': result,
+        }, SetOptions(merge: true));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PIN baru untuk ${role.toUpperCase()} berhasil disimpan!'), backgroundColor: AppTheme.success),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menyimpan PIN. Pastikan koneksi internet stabil.'), backgroundColor: AppTheme.danger),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
   

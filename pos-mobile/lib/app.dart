@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'core/services/auth_service.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/login/role_selection_screen.dart';
 import 'screens/main/main_screen.dart';
-import 'screens/admin/admin_login_screen.dart';
-import 'screens/admin/admin_main_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'core/providers/auth_provider.dart';
@@ -59,12 +55,7 @@ class _AppEntry extends StatelessWidget {
         }
         
         final isLoggedIn = auth.isLoggedIn;
-        
-        if (kIsWeb) {
-          return isLoggedIn ? const AdminMainScreen() : const AdminLoginScreen();
-        } else {
-          return isLoggedIn ? const RoleSelectionScreen() : const LoginScreen();
-        }
+        return isLoggedIn ? const RoleSelectionScreen() : const LoginScreen();
       },
     );
   }
