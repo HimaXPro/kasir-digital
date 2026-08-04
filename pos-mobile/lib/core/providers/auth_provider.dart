@@ -36,16 +36,36 @@ class AuthProvider extends ChangeNotifier {
         _userDocSub = _authService.streamUserProfile(user.uid, user.email ?? '').listen((AppUser? appUser) {
           _currentUser = appUser;
           _isLoading = false;
+          _scheduleLockTimer();
           notifyListeners();
         });
       }
     });
   }
 
+  Timer? _lockTimer;
+
+  void _scheduleLockTimer() {
+    _lockTimer?.cancel();
+    if (_currentUser == null || !_currentUser!.isTrial || _currentUser!.trialExpiresAt == null) return;
+
+    final now = DateTime.now();
+    final expiresAt = _currentUser!.trialExpiresAt!;
+    
+    if (expiresAt.isAfter(now)) {
+      final duration = expiresAt.difference(now);
+      _lockTimer = Timer(duration, () {
+        // Automatically lock when the time arrives
+        notifyListeners();
+      });
+    }
+  }
+
   @override
   void dispose() {
     _authSub?.cancel();
     _userDocSub?.cancel();
+    _lockTimer?.cancel();
     super.dispose();
   }
 
