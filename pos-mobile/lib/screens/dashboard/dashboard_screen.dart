@@ -174,49 +174,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildKpiGrid(Map<String, dynamic> kpi) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.35,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        _KpiCard(
-          label: 'Transaksi Hari Ini',
-          value: kpi['today_sales'].toString(),
-          badge: 'Transaksi Selesai',
-          color: AppTheme.primary,
-          lightColor: AppTheme.primaryLight,
-          icon: Icons.receipt_long_outlined,
-        ),
-        _KpiCard(
-          label: 'Omzet Hari Ini',
-          value: formatRupiah(kpi['today_revenue'] as num),
-          badge: 'Total Penjualan',
-          color: AppTheme.accent,
-          lightColor: const Color(0xFFECFEFF),
-          icon: Icons.monetization_on_outlined,
-          smallValue: true,
-        ),
-        _KpiCard(
-          label: 'Laba Kotor',
-          value: formatRupiah(kpi['today_profit'] as num),
-          badge: 'Gross Profit',
-          color: AppTheme.success,
-          lightColor: AppTheme.successLight,
-          icon: Icons.trending_up_rounded,
-          smallValue: true,
-        ),
-        _KpiCard(
-          label: 'Produk Terjual',
-          value: kpi['items_sold_today'].toString(),
-          badge: 'Total Item Terjual',
-          color: AppTheme.warning,
-          lightColor: AppTheme.warningLight,
-          icon: Icons.inventory_2_outlined,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = 2;
+        double childAspectRatio = 1.35;
+        
+        if (constraints.maxWidth >= 1024) {
+          crossAxisCount = 4;
+          childAspectRatio = 1.8;
+        } else if (constraints.maxWidth >= 600) {
+          crossAxisCount = 4;
+          childAspectRatio = 1.2;
+        }
+
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: childAspectRatio,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _KpiCard(
+              label: 'Transaksi Hari Ini',
+              value: kpi['today_sales'].toString(),
+              badge: 'Transaksi Selesai',
+              color: AppTheme.primary,
+              lightColor: AppTheme.primaryLight,
+              icon: Icons.receipt_long_outlined,
+            ),
+            _KpiCard(
+              label: 'Omzet Hari Ini',
+              value: formatRupiah(kpi['today_revenue'] as num),
+              badge: 'Total Penjualan',
+              color: AppTheme.accent,
+              lightColor: const Color(0xFFECFEFF),
+              icon: Icons.monetization_on_outlined,
+              smallValue: true,
+            ),
+            _KpiCard(
+              label: 'Laba Kotor',
+              value: formatRupiah(kpi['today_profit'] as num),
+              badge: 'Gross Profit',
+              color: AppTheme.success,
+              lightColor: AppTheme.successLight,
+              icon: Icons.trending_up_rounded,
+              smallValue: true,
+            ),
+            _KpiCard(
+              label: 'Produk Terjual',
+              value: kpi['items_sold_today'].toString(),
+              badge: 'Total Item Terjual',
+              color: AppTheme.warning,
+              lightColor: AppTheme.warningLight,
+              icon: Icons.inventory_2_outlined,
+            ),
+          ],
+        );
+      }
     );
   }
 

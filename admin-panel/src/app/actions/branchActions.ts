@@ -32,6 +32,8 @@ export async function createBranchAccount(data: {
         role: 'branch_pos', // Role khusus mesin kasir (tidak bisa masuk web admin)
         provinceId: data.provinceId,
         cityId: branchId, // IMPORTANT: We give the mobile app the branchId so its data is isolated!
+        subscription_status: 'trial',
+        trial_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
       });
     }
@@ -44,6 +46,8 @@ export async function createBranchAccount(data: {
       cityId: data.cityId, // Keep original Emsifa city ID for reference
       uid: uid,
       isActive: true,
+      subscription_status: 'trial',
+      trial_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       createdAt: new Date().toISOString(),
     });
 
@@ -160,3 +164,32 @@ export async function updateBranch(branchId: string, newName: string, uid?: stri
   }
 }
 
+export async function updateSubscriptionStatus(
+  branchId: string,
+  uid: string,
+  status: 'trial' | 'active',
+  expiresAt?: string
+) {
+  try {
+    const updates: any = {
+      subscription_status: status,
+    };
+    
+    if (status === 'trial' && expiresAt) {
+      updates.trial_expires_at = expiresAt;
+    } else if (status === 'active') {
+      updates.trial_expires_at = null;
+    }
+
+    await adminDb.collection('branches').doc(branchId).update(updates);
+    
+    if (uid) {
+      await adminDb.collection('users').doc(uid).update(updates);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating subscription:', error);
+    return { success: false, error: error.message };
+  }
+}

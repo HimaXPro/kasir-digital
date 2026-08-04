@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { createBranchAccount, toggleBranchStatus, deleteBranch, updateBranch } from '@/app/actions/branchActions';
+import { createBranchAccount, toggleBranchStatus, deleteBranch, updateBranch, updateSubscriptionStatus } from '@/app/actions/branchActions';
 
 interface BranchInfo {
   id: string;
@@ -13,6 +13,8 @@ interface BranchInfo {
   cityId: string;
   uid: string;
   isActive?: boolean;
+  subscription_status?: 'trial' | 'active';
+  trial_expires_at?: string;
 }
 
 interface Region {
@@ -22,6 +24,45 @@ interface Region {
 
 const formatId = (name: string) => {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+};
+
+const Countdown = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calc = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+        setIsExpired(true);
+        return;
+      }
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        setTimeLeft(`Sisa ${days} hari`);
+      } else if (hours > 0) {
+        setTimeLeft(`Sisa ${hours}j ${minutes}m`);
+      } else {
+        setTimeLeft(`Sisa ${minutes}m ${seconds}d`);
+      }
+    };
+    
+    calc();
+    const interval = setInterval(calc, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return (
+    <div style={{ fontSize: '11px', color: isExpired ? 'var(--danger)' : 'var(--text-muted)', marginTop: '4px', textAlign: 'center', fontWeight: isExpired ? 'bold' : 'normal' }}>
+      {timeLeft}
+    </div>
+  );
 };
 
 export default function CabangPage() {
@@ -56,7 +97,9 @@ export default function CabangPage() {
     name: '',
     email: '',
     uid: '',
-    password: ''
+    password: '',
+    subscription_status: 'trial' as 'trial' | 'active',
+    trial_expires_at: ''
   });
 
   useEffect(() => {
@@ -128,6 +171,16 @@ export default function CabangPage() {
     e.preventDefault();
     setIsSubmitting(true);
     const res = await updateBranch(editData.id, editData.name, editData.uid, editData.password, editData.email);
+    
+    if (res.success) {
+      await updateSubscriptionStatus(
+        editData.id, 
+        editData.uid, 
+        editData.subscription_status,
+        editData.trial_expires_at
+      );
+    }
+
     setIsSubmitting(false);
     
     if (res.success) {
@@ -164,7 +217,15 @@ export default function CabangPage() {
   };
 
   const openEdit = (b: BranchInfo) => {
-    setEditData({ id: b.id, name: b.name, email: b.email || '', uid: b.uid, password: '' });
+    setEditData({ 
+      id: b.id, 
+      name: b.name, 
+      email: b.email || '', 
+      uid: b.uid, 
+      password: '',
+      subscription_status: b.subscription_status || 'trial',
+      trial_expires_at: b.trial_expires_at || ''
+    });
     setIsEditModalOpen(true);
   };
 
@@ -207,16 +268,31 @@ export default function CabangPage() {
                     <div style={{ fontSize: '12px' }}>K: {b.cityId}</div>
                   </td>
                   <td style={{ padding: '16px 12px', textAlign: 'center' }}>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      background: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                      color: isActive ? '#10b981' : '#ef4444'
-                    }}>
-                      {isActive ? 'Aktif' : 'Nonaktif'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        background: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                        color: isActive ? '#10b981' : '#ef4444'
+                      }}>
+                        {isActive ? 'Login Aktif' : 'Login Nonaktif'}
+                      </span>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        background: b.subscription_status === 'active' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: b.subscription_status === 'active' ? '#3b82f6' : '#f59e0b'
+                      }}>
+                        {b.subscription_status === 'active' ? 'Pro' : 'Trial'}
+                      </span>
+                      {b.subscription_status !== 'active' && b.trial_expires_at && (
+                        <Countdown expiresAt={b.trial_expires_at} />
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: '16px 12px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -380,6 +456,42 @@ export default function CabangPage() {
                   placeholder="Kosongkan jika tidak ingin ganti password"
                   value={editData.password} onChange={(e) => setEditData({...editData, password: e.target.value})} 
                 />
+              </div>
+
+              <div style={{ padding: '16px', background: 'var(--surface-hover)', borderRadius: '8px', marginTop: '8px' }}>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Status Langganan</label>
+                <select 
+                  className="input-field"
+                  value={editData.subscription_status}
+                  onChange={(e) => setEditData({...editData, subscription_status: e.target.value as 'trial'|'active'})}
+                  style={{ marginBottom: editData.subscription_status === 'trial' ? '12px' : '0' }}
+                >
+                  <option value="trial">Trial (Batas Waktu)</option>
+                  <option value="active">Active (Pro / Tanpa Batas)</option>
+                </select>
+                
+                {editData.subscription_status === 'trial' && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px'}}>Batas Waktu Trial</label>
+                    <input 
+                      type="datetime-local" 
+                      className="input-field" 
+                      style={{ fontSize: '13px', padding: '8px', cursor: 'pointer' }}
+                      onClick={(e) => {
+                        try {
+                          (e.target as HTMLInputElement).showPicker();
+                        } catch (err) {} // fallback if browser doesn't support showPicker
+                      }}
+                      value={editData.trial_expires_at ? new Date(editData.trial_expires_at).toLocaleString('sv-SE', { timeZoneName: 'short' }).substring(0, 16).replace(' ', 'T') : ''} 
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const date = new Date(e.target.value);
+                          setEditData({...editData, trial_expires_at: date.toISOString()});
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>

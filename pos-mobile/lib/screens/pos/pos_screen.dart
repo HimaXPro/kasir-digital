@@ -59,8 +59,7 @@ class _PosScreenState extends State<PosScreen> {
     if (savedName != null && savedName.isNotEmpty) {
       setState(() => _attendantName = savedName);
     } else {
-      final userName = context.read<AuthProvider>().currentUser?.name;
-      setState(() => _attendantName = userName ?? 'Kasir');
+      setState(() => _attendantName = 'Kasir / Owner');
     }
   }
 
@@ -281,10 +280,12 @@ class _PosScreenState extends State<PosScreen> {
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 64,
@@ -365,6 +366,7 @@ class _PosScreenState extends State<PosScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import '../../core/providers/auth_provider.dart' as my_auth;
 import '../../core/theme/app_theme.dart';
 import '../login/login_screen.dart';
 import '../login/role_selection_screen.dart';
+import '../login/subscription_lock_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../pos/pos_screen.dart';
 import '../products/products_screen.dart';
@@ -177,6 +178,10 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<my_auth.AuthProvider>().currentUser;
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    if (user.isLocked) {
+      return SubscriptionLockScreen(user: user);
+    }
 
     // Override roles based on activeRole selected in RoleSelectionScreen
     final bool isOwner = widget.activeRole == 'owner';

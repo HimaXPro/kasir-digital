@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/app_user.dart';
+import 'subscription_lock_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart' as my_auth;
 import '../main/main_screen.dart';
@@ -433,6 +435,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<my_auth.AuthProvider>().currentUser;
+    if (user != null && user.isLocked) {
+      return SubscriptionLockScreen(user: user);
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(

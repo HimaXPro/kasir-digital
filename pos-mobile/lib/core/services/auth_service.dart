@@ -55,6 +55,13 @@ class AuthService {
     return AppUser.fromFirestore(doc.data()!, uid);
   }
 
+  Stream<AppUser?> streamUserProfile(String uid, String email) {
+    return _db.collection('users').doc(uid).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+      return AppUser.fromFirestore(doc.data()!, uid);
+    });
+  }
+
   // Legacy method for old screens
   Future<Map<String, dynamic>> login(String email, String password) async {
     final profile = await loginWithProfile(email, password);

@@ -3,6 +3,7 @@ import 'core/theme/app_theme.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/login/role_selection_screen.dart';
 import 'screens/main/main_screen.dart';
+import 'screens/login/subscription_lock_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'core/providers/auth_provider.dart';
@@ -55,7 +56,16 @@ class _AppEntry extends StatelessWidget {
         }
         
         final isLoggedIn = auth.isLoggedIn;
-        return isLoggedIn ? const RoleSelectionScreen() : const LoginScreen();
+        
+        if (!isLoggedIn) {
+          return const LoginScreen();
+        }
+
+        if (auth.currentUser?.isLocked == true) {
+          return SubscriptionLockScreen(user: auth.currentUser!);
+        }
+
+        return const RoleSelectionScreen();
       },
     );
   }
