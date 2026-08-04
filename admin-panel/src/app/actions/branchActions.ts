@@ -10,8 +10,8 @@ export async function createBranchAccount(data: {
   cityId: string;
 }) {
   try {
-    const branchId = `${data.provinceId}_${data.cityId}`;
-    
+    // Generate a unique branchId to prevent branches in the same city from overwriting each other
+    let branchId = adminDb.collection('branches').doc().id;
     let uid = branchId;
     
     // 1. Create User in Firebase Auth for Mobile POS Login
@@ -22,6 +22,7 @@ export async function createBranchAccount(data: {
         displayName: data.name,
       });
       uid = userRecord.uid;
+      branchId = uid; // Keep them 1:1
 
       // Create mapping in users collection so Mobile App knows its location
       await adminDb.collection('users').doc(uid).set({
@@ -30,7 +31,7 @@ export async function createBranchAccount(data: {
         name: data.name,
         role: 'branch_pos', // Role khusus mesin kasir (tidak bisa masuk web admin)
         provinceId: data.provinceId,
-        cityId: data.cityId,
+        cityId: branchId, // IMPORTANT: We give the mobile app the branchId so its data is isolated!
         createdAt: new Date().toISOString(),
       });
     }
@@ -40,25 +41,25 @@ export async function createBranchAccount(data: {
       name: data.name,
       email: data.email || '',
       provinceId: data.provinceId,
-      cityId: data.cityId,
+      cityId: data.cityId, // Keep original Emsifa city ID for reference
       uid: uid,
       isActive: true,
       createdAt: new Date().toISOString(),
     });
 
-    // 3. Initialize empty PINs for the new branch
+    // 3. Initialize empty PINs for the new branch using branchId as the container
     const pinsRef = adminDb
       .collection('provinces')
       .doc(data.provinceId)
       .collection('cities')
-      .doc(data.cityId)
+      .doc(branchId) // Isolated by branchId
       .collection('settings')
       .doc('store_pins');
 
     await pinsRef.set({
       pin_kasir: '',
       pin_manager: '',
-      pin_owner: '',
+      pin_owner: ''
     });
 
     return { success: true, id: branchId };

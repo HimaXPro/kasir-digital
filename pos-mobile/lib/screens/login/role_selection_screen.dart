@@ -105,48 +105,51 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     style: GoogleFonts.inter(fontSize: 32, letterSpacing: 8, color: AppTheme.primary),
                   ),
                   const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    alignment: WrapAlignment.center,
-                    children: List.generate(12, (index) {
-                      if (index == 9) return const SizedBox(width: 60, height: 60);
-                      if (index == 11) {
+                  SizedBox(
+                    width: 240, // Memaksa layout maksimal 3 kolom (60*3 + 16*2 = 212)
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(12, (index) {
+                        if (index == 9) return const SizedBox(width: 60, height: 60);
+                        if (index == 11) {
+                          return SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: TextButton(
+                              onPressed: () {
+                                if (pin.isNotEmpty) {
+                                  setState(() => pin = pin.substring(0, pin.length - 1));
+                                }
+                              },
+                              child: const Icon(Icons.backspace_outlined, color: Colors.white54),
+                            ),
+                          );
+                        }
+                        final number = index == 10 ? 0 : index + 1;
                         return SizedBox(
                           width: 60,
                           height: 60,
-                          child: TextButton(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF334155),
+                              shape: const CircleBorder(),
+                              padding: EdgeInsets.zero,
+                            ),
                             onPressed: () {
-                              if (pin.isNotEmpty) {
-                                setState(() => pin = pin.substring(0, pin.length - 1));
+                              if (pin.length < 6) {
+                                setState(() => pin += number.toString());
+                                if (pin.length == 6) {
+                                  Navigator.pop(context, pin);
+                                }
                               }
                             },
-                            child: const Icon(Icons.backspace_outlined, color: Colors.white54),
+                            child: Text(number.toString(), style: GoogleFonts.inter(fontSize: 24, color: Colors.white)),
                           ),
                         );
-                      }
-                      final number = index == 10 ? 0 : index + 1;
-                      return SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF334155),
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          onPressed: () {
-                            if (pin.length < 6) {
-                              setState(() => pin += number.toString());
-                              if (pin.length == 6) {
-                                Navigator.pop(context, pin);
-                              }
-                            }
-                          },
-                          child: Text(number.toString(), style: GoogleFonts.inter(fontSize: 24, color: Colors.white)),
-                        ),
-                      );
-                    }),
+                      }),
+                    ),
                   ),
                 ],
               ),

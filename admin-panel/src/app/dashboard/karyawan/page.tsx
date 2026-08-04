@@ -97,7 +97,7 @@ export default function ManajemenPinPage() {
     }
 
     try {
-      const pinDocRef = doc(db, 'provinces', selectedBranch.provinceId, 'cities', selectedBranch.cityId, 'settings', 'store_pins');
+      const pinDocRef = doc(db, 'provinces', selectedBranch.provinceId, 'cities', selectedBranch.id, 'settings', 'store_pins');
       await setDoc(pinDocRef, { [pinKey]: pinValue }, { merge: true });
       setSaveMessage({ text: `PIN ${role} untuk ${selectedBranch.name} berhasil diperbarui!`, type: 'success' });
     } catch (error: any) {
