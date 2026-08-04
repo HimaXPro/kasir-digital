@@ -42,6 +42,7 @@ export async function createBranchAccount(data: {
       provinceId: data.provinceId,
       cityId: data.cityId,
       uid: uid,
+      isActive: true,
       createdAt: new Date().toISOString(),
     });
 
@@ -66,3 +67,95 @@ export async function createBranchAccount(data: {
     return { success: false, error: error.message };
   }
 }
+
+export async function toggleBranchStatus(uid: string, branchId: string, currentStatus: boolean) {
+  try {
+    const newStatus = !currentStatus;
+    
+    // 1. Update Firebase Auth user (disable/enable)
+    // Only attempt if it's a real Auth uid (not equal to branchId which we used as fallback)
+    if (uid && uid !== branchId) {
+      await adminAuth.updateUser(uid, { disabled: !newStatus });
+    }
+
+    // 2. Update branches collection
+    await adminDb.collection('branches').doc(branchId).update({
+      isActive: newStatus
+    });
+
+    return { success: true, isActive: newStatus };
+  } catch (error: any) {
+    console.error('Error toggling branch status:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteBranch(branchId: string, uid: string, provinceId: string, cityId: string) {
+  try {
+    // 1. Delete from Firebase Auth if it exists
+    if (uid && uid !== branchId) {
+      try {
+        await adminAuth.deleteUser(uid);
+      } catch (authErr) {
+        console.warn('Auth user already deleted or not found:', authErr);
+      }
+      
+      // 2. Delete from users collection mapping
+      await adminDb.collection('users').doc(uid).delete();
+    }
+
+    // 3. Delete from branches collection
+    await adminDb.collection('branches').doc(branchId).delete();
+
+    // 4. Delete the store_pins document to clean up (optional but good for cleanup)
+    await adminDb
+      .collection('provinces')
+      .doc(provinceId)
+      .collection('cities')
+      .doc(cityId)
+      .collection('settings')
+      .doc('store_pins')
+      .delete();
+
+    // Note: Deleting a document does not delete its subcollections in Firestore, 
+    // but the 'store_pins' is the only subcollection we created here. 
+    // Actual transactions won't be deleted, preserving historical data!
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting branch:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateBranch(branchId: string, newName: string, uid?: string, newPassword?: string, newEmail?: string) {
+  try {
+    const branchUpdates: any = { name: newName };
+    if (newEmail) branchUpdates.email = newEmail;
+
+    // Update data in branches collection
+    await adminDb.collection('branches').doc(branchId).update(branchUpdates);
+
+    // Update data in users collection if mapping exists
+    if (uid && uid !== branchId) {
+      await adminDb.collection('users').doc(uid).update(branchUpdates)
+        .catch(err => console.warn('User mapping update warning:', err));
+      
+      const authUpdates: any = { displayName: newName };
+      if (newPassword && newPassword.trim().length >= 6) {
+        authUpdates.password = newPassword;
+      }
+      if (newEmail) {
+        authUpdates.email = newEmail;
+      }
+      
+      await adminAuth.updateUser(uid, authUpdates);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating branch:', error);
+    return { success: false, error: error.message };
+  }
+}
+

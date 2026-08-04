@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { createBranchAccount } from '@/app/actions/branchActions';
+import { createBranchAccount, toggleBranchStatus, deleteBranch, updateBranch } from '@/app/actions/branchActions';
 
 interface BranchInfo {
   id: string;
   name: string;
+  email: string;
   provinceId: string;
   cityId: string;
+  uid: string;
+  isActive?: boolean;
 }
 
 interface Region {
@@ -24,7 +27,12 @@ const formatId = (name: string) => {
 export default function CabangPage() {
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BranchInfo | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Region Data
@@ -37,16 +45,22 @@ export default function CabangPage() {
     name: '',
     email: '',
     password: '',
-    provinceId: '', // We will store the original ID from API temporarily to fetch cities
+    provinceId: '',
     provinceName: '',
     cityId: '',
     cityName: '',
   });
 
+  const [editData, setEditData] = useState({
+    id: '',
+    name: '',
+    email: '',
+    uid: '',
+    password: ''
+  });
+
   useEffect(() => {
-    // Fetch from 'branches' collection
     const q = query(collection(db, 'branches'));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const branchesData: BranchInfo[] = [];
       snapshot.forEach((doc) => {
@@ -55,11 +69,10 @@ export default function CabangPage() {
       setBranches(branchesData);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Fetch provinces when modal opens
+  // Fetch provinces when create modal opens
   useEffect(() => {
     if (isModalOpen && provinces.length === 0) {
       setLoadingProvinces(true);
@@ -85,18 +98,15 @@ export default function CabangPage() {
     }
   }, [formData.provinceId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.provinceName || !formData.cityName) {
       alert("Harap pilih provinsi dan kota!");
       return;
     }
-    
     setIsSubmitting(true);
-    
     const finalProvinceId = formatId(formData.provinceName);
     const finalCityId = formatId(formData.cityName);
-
     const res = await createBranchAccount({
       name: formData.name,
       email: formData.email,
@@ -104,11 +114,9 @@ export default function CabangPage() {
       provinceId: finalProvinceId,
       cityId: finalCityId,
     });
-
     setIsSubmitting(false);
 
     if (res.success) {
-      alert('Cabang berhasil didaftarkan!');
       setIsModalOpen(false);
       setFormData({ name: '', email: '', password: '', provinceId: '', provinceName: '', cityId: '', cityName: '' });
     } else {
@@ -116,24 +124,48 @@ export default function CabangPage() {
     }
   };
 
-  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = provinces.find(p => p.id === e.target.value);
-    setFormData({
-      ...formData,
-      provinceId: selected?.id || '',
-      provinceName: selected?.name || '',
-      cityId: '',
-      cityName: ''
-    });
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const res = await updateBranch(editData.id, editData.name, editData.uid, editData.password, editData.email);
+    setIsSubmitting(false);
+    
+    if (res.success) {
+      setIsEditModalOpen(false);
+      alert('Cabang berhasil diupdate!');
+    } else {
+      alert('Gagal update: ' + res.error);
+    }
   };
 
-  const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = cities.find(c => c.id === e.target.value);
-    setFormData({
-      ...formData,
-      cityId: selected?.id || '',
-      cityName: selected?.name || ''
-    });
+  const handleToggleStatus = async (b: BranchInfo) => {
+    const isCurrentlyActive = b.isActive !== false;
+    const actionName = isCurrentlyActive ? 'Nonaktifkan' : 'Aktifkan';
+    
+    if (confirm(`Apakah Anda yakin ingin ${actionName} akses cabang ${b.name}?`)) {
+      const res = await toggleBranchStatus(b.uid, b.id, isCurrentlyActive);
+      if (!res.success) {
+        alert('Gagal mengubah status: ' + res.error);
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsSubmitting(true);
+    const res = await deleteBranch(deleteTarget.id, deleteTarget.uid, deleteTarget.provinceId, deleteTarget.cityId);
+    setIsSubmitting(false);
+    
+    if (res.success) {
+      setDeleteTarget(null);
+    } else {
+      alert('Gagal menghapus cabang: ' + res.error);
+    }
+  };
+
+  const openEdit = (b: BranchInfo) => {
+    setEditData({ id: b.id, name: b.name, email: b.email || '', uid: b.uid, password: '' });
+    setIsEditModalOpen(true);
   };
 
   if (loading) return <div style={{padding: '40px', color: 'var(--text-muted)'}}>Memuat data cabang...</div>;
@@ -144,7 +176,7 @@ export default function CabangPage() {
         <div>
           <h1 style={{fontSize: '28px', fontWeight: 'bold', marginBottom: '8px'}}>Manajemen Cabang</h1>
           <p style={{color: 'var(--text-muted)'}}>
-            Daftar cabang/toko yang terdaftar di sistem pusat.
+            Kelola daftar cabang, status aktif, dan pengaturan toko.
           </p>
         </div>
         <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
@@ -152,28 +184,65 @@ export default function CabangPage() {
         </button>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
-            <tr style={{ borderBottom: '2px solid #eaeaea', textAlign: 'left' }}>
-              <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontWeight: '600' }}>Nama Cabang</th>
-              <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontWeight: '600' }}>Email Login POS</th>
-              <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontWeight: '600' }}>ID Provinsi</th>
-              <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontWeight: '600' }}>ID Kota</th>
+            <tr style={{ borderBottom: '2px solid var(--surface-border)', textAlign: 'left' }}>
+              <th style={{ padding: '16px 12px', color: 'var(--text-muted)', fontWeight: '600' }}>Nama Cabang</th>
+              <th style={{ padding: '16px 12px', color: 'var(--text-muted)', fontWeight: '600' }}>Email POS</th>
+              <th style={{ padding: '16px 12px', color: 'var(--text-muted)', fontWeight: '600' }}>Lokasi (ID)</th>
+              <th style={{ padding: '16px 12px', color: 'var(--text-muted)', fontWeight: '600', textAlign: 'center' }}>Status</th>
+              <th style={{ padding: '16px 12px', color: 'var(--text-muted)', fontWeight: '600', textAlign: 'right' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {branches.map((b) => (
-              <tr key={b.id} style={{ borderBottom: '1px solid #eaeaea' }}>
-                <td style={{ padding: '12px 8px', fontWeight: 600 }}>{b.name}</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-muted)' }}>{(b as any).email || '-'}</td>
-                <td style={{ padding: '12px 8px', color: '#64748b' }}>{b.provinceId}</td>
-                <td style={{ padding: '12px 8px', color: '#64748b' }}>{b.cityId}</td>
-              </tr>
-            ))}
+            {branches.map((b) => {
+              const isActive = b.isActive !== false;
+              return (
+                <tr key={b.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
+                  <td style={{ padding: '16px 12px', fontWeight: 600 }}>{b.name}</td>
+                  <td style={{ padding: '16px 12px', color: 'var(--text-muted)' }}>{b.email || '-'}</td>
+                  <td style={{ padding: '16px 12px', color: '#64748b' }}>
+                    <div style={{ fontSize: '12px' }}>P: {b.provinceId}</div>
+                    <div style={{ fontSize: '12px' }}>K: {b.cityId}</div>
+                  </td>
+                  <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                    <span style={{
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      background: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: isActive ? '#10b981' : '#ef4444'
+                    }}>
+                      {isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px 12px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => openEdit(b)}
+                        style={{ padding: '6px 12px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleToggleStatus(b)}
+                        style={{ padding: '6px 12px', background: 'transparent', border: `1px solid ${isActive ? '#f59e0b' : '#10b981'}`, color: isActive ? '#f59e0b' : '#10b981', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                        {isActive ? 'Suspend' : 'Aktifkan'}
+                      </button>
+                      <button 
+                        onClick={() => setDeleteTarget(b)}
+                        style={{ padding: '6px 12px', background: 'var(--danger)', border: 'none', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                        Hapus
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {branches.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                   Belum ada cabang terdaftar.
                 </td>
               </tr>
@@ -186,7 +255,7 @@ export default function CabangPage() {
       {isModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100,
+          backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 100,
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div className="card" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -194,7 +263,7 @@ export default function CabangPage() {
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '13px' }}>
               Mendaftarkan struktur cabang baru ke dalam database.
             </p>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleSubmitCreate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Provinsi</label>
@@ -202,13 +271,14 @@ export default function CabangPage() {
                   className="input-field"
                   required 
                   value={formData.provinceId} 
-                  onChange={handleProvinceChange}
+                  onChange={(e) => {
+                    const selected = provinces.find(p => p.id === e.target.value);
+                    setFormData({ ...formData, provinceId: selected?.id || '', provinceName: selected?.name || '', cityId: '', cityName: '' });
+                  }}
                   disabled={loadingProvinces}
                 >
                   <option value="">{loadingProvinces ? 'Memuat Provinsi...' : '-- Pilih Provinsi --'}</option>
-                  {provinces.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                  {provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
@@ -218,29 +288,25 @@ export default function CabangPage() {
                   className="input-field"
                   required 
                   value={formData.cityId} 
-                  onChange={handleCityChange}
+                  onChange={(e) => {
+                    const selected = cities.find(c => c.id === e.target.value);
+                    setFormData({ ...formData, cityId: selected?.id || '', cityName: selected?.name || '' });
+                  }}
                   disabled={!formData.provinceId || loadingCities}
                 >
                   <option value="">
-                    {!formData.provinceId 
-                      ? 'Pilih provinsi terlebih dahulu' 
-                      : (loadingCities ? 'Memuat Kota...' : '-- Pilih Kota --')}
+                    {!formData.provinceId ? 'Pilih provinsi terlebih dahulu' : (loadingCities ? 'Memuat Kota...' : '-- Pilih Kota --')}
                   </option>
-                  {cities.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
+                  {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
 
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Nama Toko / Cabang</label>
                 <input 
-                  type="text" 
-                  className="input-field"
-                  required 
+                  type="text" className="input-field" required 
                   placeholder="misal: Kasir Digital Cabang Sudirman"
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} 
                 />
               </div>
 
@@ -250,29 +316,23 @@ export default function CabangPage() {
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Email Login Aplikasi</label>
                 <input 
-                  type="email" 
-                  className="input-field"
-                  required 
+                  type="email" className="input-field" required 
                   placeholder="misal: kasir.sudirman@toko.com"
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
                 />
               </div>
 
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Password</label>
                 <input 
-                  type="password" 
-                  className="input-field"
-                  required 
+                  type="password" className="input-field" required 
                   placeholder="Minimal 6 karakter"
-                  value={formData.password} 
-                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                  value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} 
                 />
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '1px solid #ddd', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'var(--surface)', border: '1px solid var(--surface-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
                   Batal
                 </button>
                 <button type="submit" className="btn-primary" disabled={isSubmitting || !formData.provinceName || !formData.cityName}>
@@ -283,6 +343,103 @@ export default function CabangPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Edit Cabang */}
+      {isEditModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+            <h2 style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '8px'}}>Edit Cabang</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '13px' }}>
+              Anda hanya dapat mengubah nama cabang. Pengaturan lokasi tidak dapat diubah karena terikat pada data historis.
+            </p>
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Nama Toko / Cabang</label>
+                <input 
+                  type="text" className="input-field" required 
+                  value={editData.name} onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                />
+              </div>
+
+              <div>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Email Login (Aplikasi Kasir)</label>
+                <input 
+                  type="email" className="input-field" required 
+                  value={editData.email} onChange={(e) => setEditData({...editData, email: e.target.value})} 
+                />
+              </div>
+
+              <div>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Password Baru (Opsional)</label>
+                <input 
+                  type="password" className="input-field" 
+                  placeholder="Kosongkan jika tidak ingin ganti password"
+                  value={editData.password} onChange={(e) => setEditData({...editData, password: e.target.value})} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} style={{ background: 'var(--surface)', border: '1px solid var(--surface-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                  Batal
+                </button>
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Menyimpan...' : 'Update Cabang'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Delete Permanen */}
+      {deleteTarget && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '450px', borderTop: '4px solid var(--danger)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '50%', color: '#dc2626' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </div>
+              <h2 style={{fontSize: '20px', fontWeight: 'bold', color: 'var(--danger)', margin: 0}}>Hapus Permanen?</h2>
+            </div>
+            
+            <p style={{ color: 'var(--text-main)', marginBottom: '12px', fontSize: '15px', lineHeight: '1.5' }}>
+              Anda akan menghapus cabang <strong>{deleteTarget.name}</strong> secara permanen.
+            </p>
+            
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+              <p style={{ color: '#991b1b', fontSize: '13px', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+                <strong>PERINGATAN:</strong> Tindakan ini akan menghapus akses login aplikasi, PIN, dan profil cabang secara permanen. Anda tidak bisa mengembalikan data ini.
+                Jika cabang hanya tutup sementara, gunakan fitur <strong>Suspend (Nonaktif)</strong> saja!
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                type="button" 
+                onClick={() => setDeleteTarget(null)} 
+                style={{ background: 'var(--surface)', border: '1px solid var(--surface-border)', color: 'var(--text-main)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                Batal
+              </button>
+              <button 
+                type="button" 
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                style={{ background: 'var(--danger)', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                {isSubmitting ? 'Menghapus...' : 'Ya, Hapus Permanen!'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

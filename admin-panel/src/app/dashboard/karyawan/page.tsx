@@ -77,26 +77,8 @@ export default function ManajemenPinPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedBranch) {
-      setPins({ pin_kasir: '', pin_manager: '', pin_owner: '' });
-      return;
-    }
-
-    const pinDocRef = doc(db, 'provinces', selectedBranch.provinceId, 'cities', selectedBranch.cityId, 'settings', 'store_pins');
-    const unsubPins = onSnapshot(pinDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setPins({
-          pin_kasir: data.pin_kasir || '',
-          pin_manager: data.pin_manager || '',
-          pin_owner: data.pin_owner || ''
-        });
-      } else {
-        setPins({ pin_kasir: '', pin_manager: '', pin_owner: '' });
-      }
-    });
-
-    return () => unsubPins();
+    // Reset inputs whenever selected branch changes
+    setPins({ pin_kasir: '', pin_manager: '', pin_owner: '' });
   }, [selectedBranch]);
 
   const handleSave = async (role: 'kasir' | 'manager' | 'owner') => {
@@ -154,16 +136,17 @@ export default function ManajemenPinPage() {
           value={pins[`pin_${role}`]}
           onChange={(e) => setPins({...pins, [`pin_${role}`]: e.target.value.replace(/\D/g, '')})}
           maxLength={6}
+          placeholder={selectedBranch ? "Ketik 6 digit PIN baru..." : ""}
           style={{
             flex: 1,
             background: 'transparent',
             border: 'none',
             color: '#f8fafc',
             padding: '16px 16px',
-            fontSize: '16px',
-            letterSpacing: showPins[role] ? '4px' : '6px',
+            fontSize: '15px',
+            letterSpacing: (pins[`pin_${role}`] && !showPins[role]) ? '4px' : 'normal',
             outline: 'none',
-            fontFamily: 'monospace'
+            fontFamily: (pins[`pin_${role}`] && !showPins[role]) ? 'monospace' : 'inherit'
           }}
           disabled={!selectedBranch}
         />
