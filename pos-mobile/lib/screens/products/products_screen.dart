@@ -98,6 +98,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
 
     if (confirm == true) {
+      // Double check in case they lost connection while dialog was open
+      final stillHasInternet = await _checkInternet();
+      if (!stillHasInternet) {
+        _showOfflineWarning();
+        return;
+      }
+
       try {
         await _fb.deleteProduct(product.id);
         if (!mounted) return;
