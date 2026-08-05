@@ -209,7 +209,7 @@ class _MainScreenState extends State<MainScreen> {
     }
     
     // 2. POS (All roles)
-    screens.add(const PosScreen());
+    screens.add(PosScreen(activeRole: widget.activeRole));
     navItems.add(const _NavItem(icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale, label: 'Kasir'));
 
     // 3. Products (Manager & Owner)

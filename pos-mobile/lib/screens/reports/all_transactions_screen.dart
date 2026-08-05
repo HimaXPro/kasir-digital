@@ -13,8 +13,9 @@ import '../pos/widgets/receipt_dialog.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   final String timeline;
+  final bool canVoid;
 
-  const AllTransactionsScreen({super.key, required this.timeline});
+  const AllTransactionsScreen({super.key, required this.timeline, this.canVoid = false});
 
   @override
   State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
@@ -127,6 +128,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       transaction: t,
                       storeName: 'KASIR DIGITAL',
                       location: '${user?.cityId} - ${user?.provinceId}'.toUpperCase(),
+                      canVoid: widget.canVoid,
                     ),
                   );
                 },

@@ -480,7 +480,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             child: TextButton(
                               onPressed: () {
                                 Navigator.push(context, MaterialPageRoute(
-                                  builder: (_) => AllTransactionsScreen(timeline: _timeline),
+                                  builder: (_) => AllTransactionsScreen(
+                                    timeline: _timeline,
+                                    canVoid: true,
+                                  ),
                                 ));
                               },
                               child: Text('Lihat Semua (${recentTrx.length})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),

@@ -13,12 +13,14 @@ class ReceiptDialog extends StatefulWidget {
   final tr.Transaction transaction;
   final String storeName;
   final String location;
+  final bool canVoid;
 
   const ReceiptDialog({
     super.key,
     required this.transaction,
     required this.storeName,
     required this.location,
+    this.canVoid = false,
   });
 
   @override
@@ -28,8 +30,6 @@ class ReceiptDialog extends StatefulWidget {
 class _ReceiptDialogState extends State<ReceiptDialog> {
   @override
   Widget build(BuildContext context) {
-    final user = context.read<AuthProvider>().currentUser;
-    final isOwnerOrManager = user?.role == 'owner' || user?.role == 'manager';
     final t = widget.transaction;
 
     return Dialog(
@@ -315,7 +315,7 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                       ),
                     ],
                   ),
-                  if (isOwnerOrManager && t.status != 'voided') ...[
+                  if (widget.canVoid && t.status != 'voided') ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,

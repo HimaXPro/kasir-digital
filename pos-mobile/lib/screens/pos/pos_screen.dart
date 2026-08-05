@@ -20,7 +20,8 @@ import 'cart_screen.dart';
 import 'payment_screen.dart';
 
 class PosScreen extends StatefulWidget {
-  const PosScreen({super.key});
+  final String activeRole;
+  const PosScreen({super.key, this.activeRole = 'kasir'});
 
   @override
   State<PosScreen> createState() => _PosScreenState();
@@ -390,7 +391,10 @@ class _PosScreenState extends State<PosScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const AllTransactionsScreen(timeline: 'daily'),
+                  builder: (context) => AllTransactionsScreen(
+                    timeline: 'daily',
+                    canVoid: widget.activeRole == 'owner' || widget.activeRole == 'manager',
+                  ),
                 ),
               );
             },
