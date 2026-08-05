@@ -477,6 +477,7 @@ class FirebaseService {
             final createdAt = data['created_at'] as String;
             final txDate = DateTime.parse(createdAt);
             final grandTotal = double.tryParse(data['grand_total'].toString()) ?? 0;
+            final status = data['status'] as String? ?? 'completed';
             
             if (!txDate.isBefore(chartStartDate)) {
               String groupKey;
@@ -489,16 +490,20 @@ class FirebaseService {
               } else {
                 groupKey = "${txDate.year}";
               }
-              revenueGroup[groupKey] = (revenueGroup[groupKey] ?? 0) + grandTotal;
+              if (status != 'voided') {
+                revenueGroup[groupKey] = (revenueGroup[groupKey] ?? 0) + grandTotal;
+              }
             }
 
             if (!txDate.isBefore(startDate)) {
-              totalSales++;
-              totalRevenue += grandTotal;
               recentTransactions.add(tr.Transaction.fromFirestore(data, doc.id));
               
-              final items = data['items'] as List?;
-              if (items != null) {
+              if (status != 'voided') {
+                totalSales++;
+                totalRevenue += grandTotal;
+                
+                final items = data['items'] as List?;
+                if (items != null) {
                 for (var item in items) {
                   final qty = item['quantity'] as int? ?? 1;
                   final sell = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
@@ -511,6 +516,7 @@ class FirebaseService {
                   qtyByProduct[pName] = (qtyByProduct[pName] ?? 0) + qty;
                 }
               }
+            }
             }
           }
 
