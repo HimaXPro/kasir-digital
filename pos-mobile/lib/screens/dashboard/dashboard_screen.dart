@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../models/product.dart';
 import '../../models/transaction.dart' as tr;
 
 import 'package:provider/provider.dart';
@@ -22,12 +23,14 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
   late Stream<Map<String, dynamic>> _dashboardStream;
+  late Stream<List<Product>> _productsStream;
 
   @override
   void initState() {
     super.initState();
     final fb = FirebaseService(context.read<AuthProvider>().currentUser!);
     _dashboardStream = fb.streamDashboardStats();
+    _productsStream = fb.streamProducts();
   }
 
   @override
@@ -98,6 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _buildPageHeader(),
               const SizedBox(height: 16),
+              _buildNegativeStockAlert(),
               _buildKpiGrid(kpi),
               const SizedBox(height: 16),
               _buildRevenueChart(chartDays),
@@ -114,6 +118,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNegativeStockAlert() {
+    return StreamBuilder<List<Product>>(
+      stream: _productsStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox();
+        final negativeProducts = snapshot.data!.where((p) => p.stock < 0).toList();
+        if (negativeProducts.isEmpty) return const SizedBox();
+
+        final productNames = negativeProducts.map((p) => '${p.name} (${p.stock})').join(', ');
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF2F2),
+            border: Border.all(color: const Color(0xFFFCA5A5)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Perhatian: Ada Stok Minus',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF991B1B),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Produk [$productNames] saat ini memiliki stok minus. Hal ini wajar terjadi apabila ada antrean yang dibayar saat mode Offline. Harap cek fisik barang dan lakukan penyesuaian (Adjustment) di menu Produk.',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFB91C1C),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -44,7 +44,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.dispose();
   }
 
+  Future<bool> _checkInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
+  void _showOfflineWarning() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Manajemen produk membutuhkan koneksi internet. Anda sedang dalam mode Offline.'),
+        backgroundColor: AppTheme.danger,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _deleteProduct(Product product) async {
+    final hasInternet = await _checkInternet();
+    if (!hasInternet) {
+      _showOfflineWarning();
+      return;
+    }
+
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -88,7 +115,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  void _openForm({Product? product, List<Category>? categories}) {
+  Future<void> _openForm({Product? product, List<Category>? categories}) async {
+    final hasInternet = await _checkInternet();
+    if (!hasInternet) {
+      _showOfflineWarning();
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(

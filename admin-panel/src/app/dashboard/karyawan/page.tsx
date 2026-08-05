@@ -220,7 +220,7 @@ export default function ManajemenPinPage() {
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
         gap: '32px',
-        alignItems: 'start'
+        alignItems: 'stretch'
       }}>
         
         {/* Left Column: Branch Selector & Info */}
@@ -278,8 +278,9 @@ export default function ManajemenPinPage() {
                 const b = branches.find(x => x.id === e.target.value);
                 setSelectedBranch(b || null);
               }}
+              disabled={!filterCity}
             >
-              <option value="">-- Pilih Cabang --</option>
+              <option value="">{filterCity ? '-- Pilih Cabang --' : 'Pilih Kota/Kabupaten Dahulu'}</option>
               {filteredBranches.map(b => (
                 <option key={b.id} value={b.id}>{b.name} ({b.cityId})</option>
               ))}
@@ -291,7 +292,7 @@ export default function ManajemenPinPage() {
             )}
           </div>
 
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 24px' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 24px', flex: 1 }}>
             <div style={{ background: 'rgba(244, 114, 182, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px' }}>
               <ShieldIcon />
             </div>
@@ -304,14 +305,15 @@ export default function ManajemenPinPage() {
         </div>
 
         {/* Right Column: The Vault */}
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div style={{ 
             background: '#1e293b', 
             padding: '32px 24px', 
             borderRadius: '24px', 
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            flex: 1
           }}>
             {/* Overlay if no branch selected */}
             {!selectedBranch && (

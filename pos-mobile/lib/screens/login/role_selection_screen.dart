@@ -435,7 +435,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<my_auth.AuthProvider>().currentUser;
+    final authProvider = context.watch<my_auth.AuthProvider>();
+    final user = authProvider.currentUser;
+    
+    if (authProvider.isTimeTampered) {
+      return SubscriptionLockScreen(user: user, isTimeTampered: true);
+    }
+    
     if (user != null && user.isLocked) {
       return SubscriptionLockScreen(user: user);
     }

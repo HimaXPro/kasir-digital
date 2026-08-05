@@ -143,9 +143,10 @@
   }
   
   .sidebar {
-    position: static;
+    position: sticky;
+    top: 0;
     transform: translateX(0);
-    height: auto;
+    height: 100vh;
   }
   
   .mainContent {

@@ -6,9 +6,10 @@ import '../../core/theme/app_theme.dart';
 import '../../models/app_user.dart';
 
 class SubscriptionLockScreen extends StatelessWidget {
-  final AppUser user;
+  final AppUser? user;
+  final bool isTimeTampered;
 
-  const SubscriptionLockScreen({super.key, required this.user});
+  const SubscriptionLockScreen({super.key, this.user, this.isTimeTampered = false});
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +21,14 @@ class SubscriptionLockScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.lock_clock,
+              Icon(
+                isTimeTampered ? Icons.warning_amber_rounded : Icons.lock_clock,
                 size: 80,
-                color: Color(0xFFF472B6), // Pink accent
+                color: const Color(0xFFF472B6), // Pink accent
               ),
               const SizedBox(height: 24),
               Text(
-                'Masa Percobaan Habis',
+                isTimeTampered ? 'Manipulasi Waktu Terdeteksi' : 'Masa Percobaan Habis',
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -37,8 +38,10 @@ class SubscriptionLockScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Masa uji coba 24 jam untuk cabang ${user.name} telah berakhir.\n'
-                'Silakan hubungi Pusat (Superadmin) untuk mengaktifkan akun atau memperpanjang masa trial Anda.',
+                isTimeTampered 
+                  ? 'Kami mendeteksi adanya percobaan memundurkan jam/tanggal pada perangkat ini.\n\nSistem keamanan telah mengunci mesin kasir. Silakan pastikan pengaturan waktu Anda otomatis (tersinkron internet) lalu muat ulang.'
+                  : 'Masa uji coba 24 jam untuk cabang ${user?.name ?? 'ini'} telah berakhir.\n'
+                    'Silakan hubungi Pusat (Superadmin) untuk mengaktifkan akun atau memperpanjang masa trial Anda.',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: Colors.white70,

@@ -82,18 +82,24 @@ export default function DashboardLayout({
           </Link>
         </nav>
         
-        <div className={styles.logoutBtn} style={{ paddingBottom: '24px', paddingLeft: '0', paddingRight: '0' }}>
+        <div className={styles.logoutBtn} style={{ paddingBottom: '24px' }}>
           <button 
-            className={styles.navItem}
             style={{
               width: '100%', 
-              background: 'transparent', 
-              color: 'var(--danger)', 
+              background: 'var(--danger)', 
+              color: 'white', 
               border: 'none', 
               cursor: 'pointer',
-              fontSize: '15px', /* matching body font */
+              fontSize: '15px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: '12px'
             }} onClick={() => setIsLogoutModalOpen(true)}>
-            <span className={styles.icon}>
+            <span className={styles.icon} style={{ display: 'flex', alignItems: 'center' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             </span>
             Keluar Akses

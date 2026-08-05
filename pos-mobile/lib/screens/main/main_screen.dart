@@ -176,8 +176,13 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<my_auth.AuthProvider>().currentUser;
+    final authProvider = context.watch<my_auth.AuthProvider>();
+    final user = authProvider.currentUser;
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    if (authProvider.isTimeTampered) {
+      return SubscriptionLockScreen(user: user, isTimeTampered: true);
+    }
 
     if (user.isLocked) {
       return SubscriptionLockScreen(user: user);
