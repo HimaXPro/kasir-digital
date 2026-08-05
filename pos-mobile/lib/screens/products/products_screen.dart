@@ -10,6 +10,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/image_helper.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
@@ -46,9 +47,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<bool> _checkInternet() async {
     try {
-      final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 2));
-      socket.destroy();
-      return true;
+      final response = await http
+          .get(Uri.parse('https://clients3.google.com/generate_204'))
+          .timeout(const Duration(seconds: 2));
+      return response.statusCode == 204;
     } catch (_) {
       return false;
     }
@@ -516,8 +518,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     // Check internet connection
     setState(() => _loading = true);
     try {
-      final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 2));
-      socket.destroy();
+      final response = await http
+          .get(Uri.parse('https://clients3.google.com/generate_204'))
+          .timeout(const Duration(seconds: 2));
+      if (response.statusCode != 204) {
+        throw const SocketException('No Internet');
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
