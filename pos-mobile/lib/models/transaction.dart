@@ -52,6 +52,9 @@ class Transaction {
   final String? customerName;
   final String? orderNote;
   final String? cashierName;
+  final String status;
+  final String? voidReason;
+  final String? voidedAt;
 
   Transaction({
     required this.id,
@@ -64,6 +67,9 @@ class Transaction {
     this.customerName,
     this.orderNote,
     this.cashierName,
+    this.status = 'completed',
+    this.voidReason,
+    this.voidedAt,
   });
 
   factory Transaction.fromFirestore(Map<String, dynamic> json, String docId) {
@@ -85,6 +91,9 @@ class Transaction {
       customerName: json['customer_name'] as String?,
       orderNote: json['order_note'] as String?,
       cashierName: json['cashier_name'] as String?,
+      status: json['status'] as String? ?? 'completed',
+      voidReason: json['void_reason'] as String?,
+      voidedAt: json['voided_at'] as String?,
     );
   }
 
@@ -98,5 +107,8 @@ class Transaction {
         if (customerName != null) 'customer_name': customerName,
         if (orderNote != null) 'order_note': orderNote,
         if (cashierName != null) 'cashier_name': cashierName,
+        'status': status,
+        if (voidReason != null) 'void_reason': voidReason,
+        if (voidedAt != null) 'voided_at': voidedAt,
       };
 }

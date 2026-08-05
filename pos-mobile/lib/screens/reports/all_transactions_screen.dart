@@ -143,11 +143,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       Container(
                         width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryLight,
+                          color: t.status == 'voided' ? AppTheme.danger.withAlpha(25) : AppTheme.primaryLight,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.receipt_long_outlined,
-                            color: AppTheme.primary, size: 18),
+                        child: Icon(
+                            t.status == 'voided' ? Icons.block : Icons.receipt_long_outlined,
+                            color: t.status == 'voided' ? AppTheme.danger : AppTheme.primary, size: 18),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -161,6 +162,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             Text('${t.cashierName ?? "Kasir"} • $dateStr',
                                 style: GoogleFonts.inter(
                                     fontSize: 11, color: AppTheme.textMuted)),
+                            if (t.status == 'voided')
+                              Container(
+                                margin: const EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.danger.withAlpha(25),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text('DIBATALKAN', 
+                                  style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.danger)),
+                              ),
                           ],
                         ),
                       ),
@@ -169,7 +181,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         children: [
                           Text(formatRupiah(t.grandTotal),
                               style: GoogleFonts.inter(
-                                  fontSize: 13, fontWeight: FontWeight.w700)),
+                                  fontSize: 13, 
+                                  fontWeight: FontWeight.w700,
+                                  decoration: t.status == 'voided' ? TextDecoration.lineThrough : null,
+                                  color: t.status == 'voided' ? AppTheme.textMuted : AppTheme.textPrimary)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             margin: const EdgeInsets.only(top: 4),

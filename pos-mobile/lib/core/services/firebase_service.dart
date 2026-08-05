@@ -177,6 +177,37 @@ class FirebaseService {
     return docRef;
   }
 
+  Future<void> voidTransaction(tr.Transaction transaction, String reason) async {
+    // 1. Update Transaction Status
+    final txRef = _cityRef('transactions').doc(transaction.id);
+    await txRef.update({
+      'status': 'voided',
+      'void_reason': reason,
+      'voided_at': DateTime.now().toIso8601String(),
+    });
+
+    // 2. Return Stock
+    for (var item in transaction.items ?? []) {
+      final productRef = _cityRef('products').doc(item.productId);
+      productRef.update({'stock': FieldValue.increment(item.quantity)});
+
+      // 3. Log Stock Movement IN
+      final movement = StockMovement(
+        id: '',
+        productId: item.productId,
+        productName: item.productName,
+        type: 'IN',
+        quantity: item.quantity,
+        note: 'Pembatalan Transaksi (Void)',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final movData = movement.toFirestore();
+      movData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
+      
+      _cityRef('stock_movements').doc().set(movData);
+    }
+  }
+
   Stream<List<StockMovement>> streamStockMovements({String timeline = 'monthly'}) {
     final now = DateTime.now();
     DateTime startDate;
@@ -266,10 +297,19 @@ class FirebaseService {
 
       for (var doc in txSnapshot.docs) {
         final data = doc.data();
+        final status = data['status'] as String? ?? 'completed';
         final createdAt = data['created_at'] as String;
         final txDate = DateTime.parse(createdAt);
         final grandTotal = double.tryParse(data['grand_total'].toString()) ?? 0;
         
+        // Add to recentTransactions regardless of status
+        if (!txDate.isBefore(startDate)) {
+          recentTransactions.add(tr.Transaction.fromFirestore(data, doc.id));
+        }
+
+        // If voided, skip KPI calculations
+        if (status == 'voided') continue;
+
         // 1. Chart Data Grouping
         if (!txDate.isBefore(chartStartDate)) {
           String groupKey;
@@ -285,11 +325,10 @@ class FirebaseService {
           revenueGroup[groupKey] = (revenueGroup[groupKey] ?? 0) + grandTotal;
         }
 
-        // 2. KPI & Top Products & Recent Transactions Data
+        // 2. KPI & Top Products Data
         if (!txDate.isBefore(startDate)) {
           totalSales++;
           totalRevenue += grandTotal;
-          recentTransactions.add(tr.Transaction.fromFirestore(data, doc.id));
           
           final items = data['items'] as List?;
           if (items != null) {
