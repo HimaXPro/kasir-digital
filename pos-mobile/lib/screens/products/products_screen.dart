@@ -46,9 +46,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<bool> _checkInternet() async {
     try {
-      final result = await InternetAddress.lookup('google.com');
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 2));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
+    } catch (_) {
       return false;
     }
   }
@@ -504,7 +505,28 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Check internet connection
     setState(() => _loading = true);
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 2));
+      if (result.isEmpty || result[0].rawAddress.isEmpty) {
+        throw const SocketException('No Internet');
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Menyimpan produk membutuhkan koneksi internet. Anda sedang dalam mode Offline.'),
+          backgroundColor: AppTheme.danger,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     try {
       String? imageUrl = _existingImageUrl;
       if (_imageFile != null) {
