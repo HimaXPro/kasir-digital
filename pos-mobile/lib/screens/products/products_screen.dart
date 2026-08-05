@@ -46,9 +46,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<bool> _checkInternet() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 2));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 2));
+      socket.destroy();
+      return true;
     } catch (_) {
       return false;
     }
@@ -516,11 +516,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     // Check internet connection
     setState(() => _loading = true);
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 2));
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        throw const SocketException('No Internet');
-      }
+      final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 2));
+      socket.destroy();
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
