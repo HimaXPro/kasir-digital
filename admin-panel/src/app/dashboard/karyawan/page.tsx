@@ -43,6 +43,10 @@ export default function ManajemenPinPage() {
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<BranchInfo | null>(null);
   
+  // Filters
+  const [filterProvince, setFilterProvince] = useState('');
+  const [filterCity, setFilterCity] = useState('');
+  
   const [pins, setPins] = useState({
     pin_kasir: '',
     pin_manager: '',
@@ -80,6 +84,18 @@ export default function ManajemenPinPage() {
     // Reset inputs whenever selected branch changes
     setPins({ pin_kasir: '', pin_manager: '', pin_owner: '' });
   }, [selectedBranch]);
+
+  // Derived Filter Data
+  const availableProvinces = Array.from(new Set(branches.map(b => b.provinceId)));
+  const availableCities = filterProvince 
+    ? Array.from(new Set(branches.filter(b => b.provinceId === filterProvince).map(b => b.cityId)))
+    : [];
+
+  const filteredBranches = branches.filter(b => {
+    if (filterProvince && b.provinceId !== filterProvince) return false;
+    if (filterCity && b.cityId !== filterCity) return false;
+    return true;
+  });
 
   const handleSave = async (role: 'kasir' | 'manager' | 'owner') => {
     if (!selectedBranch) return;
@@ -211,6 +227,46 @@ export default function ManajemenPinPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div className="card" style={{ border: '1px solid var(--primary)', background: 'linear-gradient(to bottom right, var(--surface), rgba(244, 114, 182, 0.05))' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexDirection: 'column' }}>
+              <div>
+                <label style={{display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Filter Provinsi</label>
+                <select 
+                  className="input-field"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--bg-color)', fontSize: '14px', cursor: 'pointer' }}
+                  value={filterProvince}
+                  onChange={(e) => {
+                    setFilterProvince(e.target.value);
+                    setFilterCity(''); 
+                    setSelectedBranch(null); // Reset selected branch when filter changes
+                  }}
+                >
+                  <option value="">Semua Provinsi</option>
+                  {availableProvinces.map(p => (
+                    <option key={p} value={p}>{p.replace(/_/g, ' ').toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label style={{display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Filter Kota/Kabupaten</label>
+                <select 
+                  className="input-field"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--bg-color)', fontSize: '14px', cursor: 'pointer' }}
+                  value={filterCity}
+                  onChange={(e) => {
+                    setFilterCity(e.target.value);
+                    setSelectedBranch(null); // Reset selected branch when filter changes
+                  }}
+                  disabled={!filterProvince}
+                >
+                  <option value="">{filterProvince ? 'Semua Kota' : 'Pilih Provinsi Dahulu'}</option>
+                  {availableCities.map(c => (
+                    <option key={c} value={c}>{c.replace(/_/g, ' ').toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <label style={{ display: 'block', fontWeight: '600', marginBottom: '12px', color: 'var(--text-main)', fontSize: '15px' }}>
               Pilih Cabang Target:
             </label>
@@ -224,7 +280,7 @@ export default function ManajemenPinPage() {
               }}
             >
               <option value="">-- Pilih Cabang --</option>
-              {branches.map(b => (
+              {filteredBranches.map(b => (
                 <option key={b.id} value={b.id}>{b.name} ({b.cityId})</option>
               ))}
             </select>

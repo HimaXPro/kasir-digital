@@ -76,6 +76,10 @@ export default function CabangPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Filters
+  const [filterProvince, setFilterProvince] = useState('');
+  const [filterCity, setFilterCity] = useState('');
+
   // Region Data
   const [provinces, setProvinces] = useState<Region[]>([]);
   const [cities, setCities] = useState<Region[]>([]);
@@ -229,6 +233,17 @@ export default function CabangPage() {
     setIsEditModalOpen(true);
   };
 
+  const availableProvinces = Array.from(new Set(branches.map(b => b.provinceId)));
+  const availableCities = filterProvince 
+    ? Array.from(new Set(branches.filter(b => b.provinceId === filterProvince).map(b => b.cityId)))
+    : [];
+
+  const filteredBranches = branches.filter(b => {
+    if (filterProvince && b.provinceId !== filterProvince) return false;
+    if (filterCity && b.cityId !== filterCity) return false;
+    return true;
+  });
+
   if (loading) return <div style={{padding: '40px', color: 'var(--text-muted)'}}>Memuat data cabang...</div>;
 
   return (
@@ -246,6 +261,39 @@ export default function CabangPage() {
       </div>
 
       <div className="card" style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1', minWidth: '200px' }}>
+            <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Filter Provinsi</label>
+            <select 
+              className="input-field"
+              value={filterProvince}
+              onChange={(e) => {
+                setFilterProvince(e.target.value);
+                setFilterCity(''); // Reset city when province changes
+              }}
+            >
+              <option value="">Semua Provinsi</option>
+              {availableProvinces.map(p => (
+                <option key={p} value={p}>{p.replace(/_/g, ' ').toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: '1', minWidth: '200px' }}>
+            <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Filter Kota/Kabupaten</label>
+            <select 
+              className="input-field"
+              value={filterCity}
+              onChange={(e) => setFilterCity(e.target.value)}
+              disabled={!filterProvince}
+            >
+              <option value="">{filterProvince ? 'Semua Kota' : 'Pilih Provinsi Dahulu'}</option>
+              {availableCities.map(c => (
+                <option key={c} value={c}>{c.replace(/_/g, ' ').toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr style={{ borderBottom: '2px solid var(--surface-border)', textAlign: 'left' }}>
@@ -257,7 +305,7 @@ export default function CabangPage() {
             </tr>
           </thead>
           <tbody>
-            {branches.map((b) => {
+            {filteredBranches.map((b) => {
               const isActive = b.isActive !== false;
               return (
                 <tr key={b.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
@@ -316,10 +364,10 @@ export default function CabangPage() {
                 </tr>
               );
             })}
-            {branches.length === 0 && (
+            {filteredBranches.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                  Belum ada cabang terdaftar.
+                  Tidak ada cabang yang sesuai dengan filter.
                 </td>
               </tr>
             )}

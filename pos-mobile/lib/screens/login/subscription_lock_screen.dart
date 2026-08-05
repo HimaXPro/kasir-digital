@@ -46,23 +46,6 @@ class SubscriptionLockScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  label: const Text('Refresh Status', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    // Trigger a reload in auth provider
-                    context.read<AuthProvider>().reloadUser();
-                  },
-                ),
-              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
