@@ -55,7 +55,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Koneksi internet diperlukan untuk masuk!'), backgroundColor: AppTheme.danger),
       );
       return;
@@ -77,7 +77,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('PIN Salah!'), backgroundColor: AppTheme.danger),
       );
     }
@@ -351,12 +351,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           'pin_$role': result,
         }, SetOptions(merge: true));
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('PIN baru untuk ${role.toUpperCase()} berhasil disimpan!'), backgroundColor: AppTheme.success),
         );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           const SnackBar(content: Text('Gagal menyimpan PIN. Pastikan koneksi internet stabil.'), backgroundColor: AppTheme.danger),
         );
       } finally {

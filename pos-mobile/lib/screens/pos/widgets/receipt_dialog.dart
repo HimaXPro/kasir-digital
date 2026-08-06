@@ -294,12 +294,12 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                               
                               await PrintService().printReceipt(trxData);
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                                 const SnackBar(content: Text('Nota sedang dicetak...'), backgroundColor: AppTheme.success),
                               );
                             } catch (e) {
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                                 SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
                               );
                             }
@@ -395,13 +395,13 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
           await fb.voidTransaction(widget.transaction, reasonCtrl.text.trim());
           if (!context.mounted) return;
           Navigator.pop(context); // Close receipt dialog
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
             const SnackBar(content: Text('Transaksi berhasil dibatalkan'), backgroundColor: AppTheme.success),
           );
         }
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('Gagal: ${e.toString()}'), backgroundColor: AppTheme.danger),
         );
       }

@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _showForgotPasswordDialog() async {
     if (_emailCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Masukkan email Anda terlebih dahulu di kolom email!'), backgroundColor: AppTheme.warning),
       );
       return;
@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen>
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailCtrl.text.trim());
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(
           content: Text('Link reset password telah dikirim ke email Anda.'),
           backgroundColor: AppTheme.success,
@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         SnackBar(
           content: Text('Gagal mengirim email reset: ${e.toString()}'),
           backgroundColor: AppTheme.danger,

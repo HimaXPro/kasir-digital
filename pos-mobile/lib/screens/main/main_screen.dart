@@ -159,7 +159,7 @@ class _MainScreenState extends State<MainScreen> {
 
     if (result == true) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Password berhasil diubah. Seluruh perangkat akan dilogout. Silakan login kembali.'), backgroundColor: AppTheme.success, duration: Duration(seconds: 4)),
       );
       await context.read<my_auth.AuthProvider>().logout();

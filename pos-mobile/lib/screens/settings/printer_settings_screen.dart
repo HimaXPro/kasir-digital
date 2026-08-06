@@ -59,7 +59,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
         _loading = false;
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         SnackBar(
           content: Text(success ? 'Printer terhubung' : 'Gagal terhubung ke printer'),
           backgroundColor: success ? AppTheme.success : AppTheme.danger,

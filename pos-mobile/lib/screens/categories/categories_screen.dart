@@ -145,7 +145,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       try {
         await _fb.deleteCategory(category.id);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(
             content: Text('${category.name} berhasil dihapus'),
             backgroundColor: AppTheme.success,
@@ -153,7 +153,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
         );
       }

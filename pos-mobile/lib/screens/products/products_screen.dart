@@ -58,7 +58,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   void _showOfflineWarning() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
       const SnackBar(
         content: Text('Manajemen produk membutuhkan koneksi internet. Anda sedang dalam mode Offline.'),
         backgroundColor: AppTheme.danger,
@@ -110,7 +110,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       try {
         await _fb.deleteProduct(product.id);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(
             content: Text('${product.name} berhasil dihapus'),
             backgroundColor: AppTheme.success,
@@ -118,7 +118,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
         );
       }
@@ -496,7 +496,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         SnackBar(content: Text('Gagal memilih gambar: $e'), backgroundColor: AppTheme.danger),
       );
     }
@@ -527,7 +527,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(
           content: Text('Menyimpan produk membutuhkan koneksi internet. Anda sedang dalam mode Offline.'),
           backgroundColor: AppTheme.danger,
@@ -567,7 +567,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
       );
     } finally {

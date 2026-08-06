@@ -116,7 +116,7 @@ class _PosScreenState extends State<PosScreen> {
         if (_cart[idx].quantity < product.stock) {
           _cart[idx].quantity++;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
             SnackBar(
               content: Text('Stok ${product.name} hanya ${product.stock} unit'),
             ),
@@ -147,7 +147,7 @@ class _PosScreenState extends State<PosScreen> {
         } else {
           final pIdx = _allProducts.indexWhere((p) => p.id == productId);
           if (pIdx >= 0 && qty > _allProducts[pIdx].stock) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
               SnackBar(content: Text('Stok hanya ${_allProducts[pIdx].stock} unit')),
             );
             return;
@@ -163,7 +163,7 @@ class _PosScreenState extends State<PosScreen> {
 
   void _openCart() {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Keranjang masih kosong')),
       );
       return;
@@ -267,7 +267,7 @@ class _PosScreenState extends State<PosScreen> {
       _showSuccessDialog(transaction, trxData);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
       );
     }
