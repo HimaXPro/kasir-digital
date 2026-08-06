@@ -126,8 +126,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     context: context,
                     builder: (_) => ReceiptDialog(
                       transaction: t,
-                      storeName: 'KASIR DIGITAL',
-                      location: [user?.storeName, user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
+                      storeName: 'UMKM BHAYANGKARI',
+                      location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                       canVoid: widget.canVoid,
                     ),
                   );

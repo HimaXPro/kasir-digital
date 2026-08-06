@@ -340,8 +340,8 @@ class _PosScreenState extends State<PosScreen> {
                       context: context,
                       builder: (_) => ReceiptDialog(
                         transaction: transaction,
-                        storeName: 'KASIR DIGITAL', // Can be fetched from settings if we had them
-                        location: [user?.storeName, user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
+                        storeName: 'UMKM BHAYANGKARI',
+                        location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                       ),
                     );
                   },

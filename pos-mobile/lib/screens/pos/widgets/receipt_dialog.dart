@@ -71,6 +71,8 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                         ),
                       ),
                     // Header
+                    Image.asset('assets/images/logo_bhayangkari.jpg', height: 48),
+                    const SizedBox(height: 8),
                     Text(
                       widget.storeName.toUpperCase(),
                       style: GoogleFonts.ibmPlexMono(
