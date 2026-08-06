@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <application
-        android:label="pos_mobile"
+        android:label="Kasir Digital | UMKM BHAYANGKARI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

@@ -30,25 +30,49 @@ class _AppEntry extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, auth, child) {
         if (auth.isLoading) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF4F46E5),
+          return Scaffold(
+            backgroundColor: const Color(0xFF4F46E5),
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.point_of_sale, color: Colors.white, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    'Kasir Digital',
+                  Image.asset(
+                    'assets/images/logo_bhayangkari.jpg',
+                    width: 120,
+                    height: 120,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Kasir Digital | UMKM BHAYANGKARI',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  SizedBox(height: 32),
-                  CircularProgressIndicator(color: Colors.white54),
+                  const SizedBox(height: 32),
+                  const CircularProgressIndicator(color: Colors.white54),
+                  const SizedBox(height: 48),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'powered by HimaXPro',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Image.asset(
+                        'assets/images/logo_himaxpro.png',
+                        width: 80,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

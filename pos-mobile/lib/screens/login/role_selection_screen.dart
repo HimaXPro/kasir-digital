@@ -153,6 +153,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       }),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'powered by HimaXPro',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Image.asset(
+                        'assets/images/logo_himaxpro.png',
+                        width: 60,
+                      ),
+                    ],
+                  ),
                 ],
               ),
               actions: [
@@ -319,6 +338,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       );
                     }),
                   ),
+                  const SizedBox(height: 24),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'powered by HimaXPro',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Image.asset(
+                        'assets/images/logo_himaxpro.png',
+                        width: 60,
+                      ),
+                    ],
+                  ),
                 ],
               ),
               actions: [
@@ -466,7 +504,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.store_outlined, size: 64, color: AppTheme.primary),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/images/logo_bhayangkari.jpg',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Siapa Anda?',
@@ -493,6 +539,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       _buildRoleButton('kasir', Icons.point_of_sale, Colors.blue),
                       _buildRoleButton('manager', Icons.inventory_2, AppTheme.warning),
                       _buildRoleButton('owner', Icons.admin_panel_settings, AppTheme.primary),
+                    ],
+                  ),
+                  const SizedBox(height: 48),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'powered by HimaXPro',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Image.asset(
+                        'assets/images/logo_himaxpro.png',
+                        width: 60,
+                      ),
                     ],
                   ),
                 ],

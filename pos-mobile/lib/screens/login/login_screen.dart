@@ -146,39 +146,32 @@ class _LoginScreenState extends State<LoginScreen>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Logo
                         Center(
                           child: Container(
-                            width: 72,
-                            height: 72,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF4F46E5),
-                                  Color(0xFF7C3AED),
-                                ],
-                              ),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primary.withAlpha(102),
+                                  color: AppTheme.primary.withAlpha(50),
                                   blurRadius: 24,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.point_of_sale,
-                              color: Colors.white,
-                              size: 36,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/images/logo_bhayangkari.jpg',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Kasir Digital',
+                          'Kasir Digital\nUMKM BHAYANGKARI',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: Colors.white,
@@ -429,13 +422,24 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
 
                         const SizedBox(height: 24),
-                        Text(
-                          'Kasir Digital v1.0 • Connected to Web',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF334155),
-                            fontSize: 12,
-                          ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'powered by HimaXPro',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF64748B),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Image.asset(
+                              'assets/images/logo_himaxpro.png',
+                              width: 80,
+                            ),
+                          ],
                         ),
                       ],
                     ),
