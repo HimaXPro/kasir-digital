@@ -100,9 +100,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    pin.padRight(6, '•').substring(0, 6),
-                    style: GoogleFonts.inter(fontSize: 32, letterSpacing: 8, color: AppTheme.primary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(6, (index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Icon(
+                          index < pin.length ? Icons.circle : Icons.radio_button_unchecked,
+                          size: 20,
+                          color: AppTheme.primary,
+                        ),
+                      );
+                    }),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -269,9 +278,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    pin.padRight(6, '•').substring(0, 6),
-                    style: GoogleFonts.inter(fontSize: 32, letterSpacing: 8, color: AppTheme.success),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(6, (index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Icon(
+                          index < pin.length ? Icons.circle : Icons.radio_button_unchecked,
+                          size: 20,
+                          color: AppTheme.success,
+                        ),
+                      );
+                    }),
                   ),
                   const SizedBox(height: 24),
                   Wrap(

@@ -469,14 +469,15 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          user.storeName,
-                          style: GoogleFonts.inter(
-                            color: AppTheme.sidebarText,
-                            fontSize: 11,
+                        if (user.storeName != user.name)
+                          Text(
+                            user.storeName,
+                            style: GoogleFonts.inter(
+                              color: AppTheme.sidebarText,
+                              fontSize: 11,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
                         if (user.cityId != null && user.provinceId != null)
                           Text(
                             '${user.cityId?.replaceAll('_', ' ').toUpperCase()} - ${user.provinceId?.replaceAll('_', ' ').toUpperCase()}',
