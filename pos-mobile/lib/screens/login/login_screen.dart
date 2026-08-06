@@ -133,29 +133,20 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
           // Login form
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - 48, // 48 is top+bottom padding
-                  ),
-                  child: IntrinsicHeight(
-                    child: FadeTransition(
-                      opacity: _fadeAnim,
-                      child: SlideTransition(
-                        position: _slideAnim,
-                        child: Column(
-                          children: [
-                            const Spacer(),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 400),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
+          Center(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                         Center(
                           child: Container(
                             width: 80,
@@ -431,41 +422,33 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                                ],
+                        const SizedBox(height: 32),
+                        // HimaXPro footer
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'powered by HimaXPro',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF64748B),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const Spacer(),
-                            // HimaXPro footer
-                            Padding(
-                              padding: const EdgeInsets.only(top: 16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'powered by HimaXPro',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(
-                                      color: const Color(0xFF64748B),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Image.asset(
-                                    'assets/images/logo_himaxpro.png',
-                                    width: 80,
-                                  ),
-                                ],
-                              ),
+                            const SizedBox(height: 8),
+                            Image.asset(
+                              'assets/images/logo_himaxpro.png',
+                              width: 80,
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ],
       ),

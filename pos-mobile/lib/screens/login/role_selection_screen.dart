@@ -461,23 +461,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
-        : LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      children: [
-                        const Spacer(),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+        : Center(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
@@ -515,38 +506,30 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           _buildRoleButton('owner', Icons.admin_panel_settings, AppTheme.primary),
                         ],
                       ),
-                    ],
-                  ),
-                  const Spacer(),
+                        const SizedBox(height: 32),
                         // Footer
-                        Padding(
-                          padding: const EdgeInsets.only(top: 24.0, bottom: 24.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'powered by HimaXPro',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'powered by HimaXPro',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
                               ),
-                              const SizedBox(height: 4),
-                              Image.asset(
-                                'assets/images/logo_himaxpro.png',
-                                width: 60,
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 4),
+                            Image.asset(
+                              'assets/images/logo_himaxpro.png',
+                              width: 60,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
-              );
-            },
-          ),
     );
   }
 }
