@@ -3,8 +3,8 @@ class AppUser {
   final String email;
   final String name;
   final String role; // 'owner', 'manager', 'kasir'
-  final String provinceId;
-  final String cityId;
+  final String storeId;
+  final String storeName;
   final String subscriptionStatus;
   final DateTime? trialExpiresAt;
 
@@ -13,8 +13,8 @@ class AppUser {
     required this.email,
     required this.name,
     required this.role,
-    required this.provinceId,
-    required this.cityId,
+    required this.storeId,
+    required this.storeName,
     this.subscriptionStatus = 'active',
     this.trialExpiresAt,
   });
@@ -25,8 +25,8 @@ class AppUser {
       email: data['email'] ?? '',
       name: data['name'] ?? 'Kasir',
       role: data['role'] ?? 'kasir',
-      provinceId: data['province_id'] ?? 'jatim',
-      cityId: data['city_id'] ?? 'malang',
+      storeId: data['store_id'] ?? 'bhayangkari_pusat',
+      storeName: data['store_name'] ?? 'Bhayangkari Pusat',
       subscriptionStatus: data['subscription_status'] ?? 'active',
       trialExpiresAt: data['trial_expires_at'] != null ? DateTime.parse(data['trial_expires_at']) : null,
     );
@@ -37,8 +37,8 @@ class AppUser {
       'email': email,
       'name': name,
       'role': role,
-      'province_id': provinceId,
-      'city_id': cityId,
+      'store_id': storeId,
+      'store_name': storeName,
       'subscription_status': subscriptionStatus,
       'trial_expires_at': trialExpiresAt?.toIso8601String(),
     };

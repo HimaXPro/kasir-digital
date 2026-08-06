@@ -127,7 +127,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     builder: (_) => ReceiptDialog(
                       transaction: t,
                       storeName: 'KASIR DIGITAL',
-                      location: '${user?.cityId} - ${user?.provinceId}'.toUpperCase(),
+                      location: user?.storeName.toUpperCase() ?? '',
                       canVoid: widget.canVoid,
                     ),
                   );

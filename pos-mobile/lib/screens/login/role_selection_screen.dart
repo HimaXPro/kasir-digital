@@ -30,10 +30,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     if (user == null) return;
     
     final pinDocRef = FirebaseFirestore.instance
-        .collection('provinces')
-        .doc(user.provinceId)
-        .collection('cities')
-        .doc(user.cityId)
+        .collection('stores')
+        .doc(user.storeId)
         .collection('settings')
         .doc('store_pins');
 
@@ -338,10 +336,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       if (user == null) return;
       
       final pinDocRef = FirebaseFirestore.instance
-          .collection('provinces')
-          .doc(user.provinceId)
-          .collection('cities')
-          .doc(user.cityId)
+          .collection('stores')
+          .doc(user.storeId)
           .collection('settings')
           .doc('store_pins');
 

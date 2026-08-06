@@ -341,7 +341,7 @@ class _PosScreenState extends State<PosScreen> {
                       builder: (_) => ReceiptDialog(
                         transaction: transaction,
                         storeName: 'KASIR DIGITAL', // Can be fetched from settings if we had them
-                        location: '${user?.cityId} - ${user?.provinceId}'.toUpperCase(),
+                        location: user?.storeName.toUpperCase() ?? '',
                       ),
                     );
                   },

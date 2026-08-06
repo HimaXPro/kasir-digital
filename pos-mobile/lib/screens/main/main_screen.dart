@@ -470,7 +470,7 @@ class _MainScreenState extends State<MainScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          '${user.cityId} - ${user.provinceId}',
+                          user.storeName,
                           style: GoogleFonts.inter(
                             color: AppTheme.sidebarText,
                             fontSize: 11,

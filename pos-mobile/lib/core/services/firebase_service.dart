@@ -13,12 +13,10 @@ class FirebaseService {
 
   FirebaseService(this.user);
 
-  CollectionReference<Map<String, dynamic>> _cityRef(String collectionName) {
+  CollectionReference<Map<String, dynamic>> _storeRef(String collectionName) {
     return _db
-        .collection('provinces')
-        .doc(user.provinceId)
-        .collection('cities')
-        .doc(user.cityId)
+        .collection('stores')
+        .doc(user.storeId)
         .collection(collectionName);
   }
 
@@ -26,7 +24,7 @@ class FirebaseService {
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
     final ref = FirebaseStorage.instance
         .ref()
-        .child('provinces/${user.provinceId}/cities/${user.cityId}/$folder/$fileName');
+        .child('stores/${user.storeId}/$folder/$fileName');
     
     final uploadTask = ref.putFile(imageFile);
     final snapshot = await uploadTask.whenComplete(() {});
@@ -35,7 +33,7 @@ class FirebaseService {
 
   // === CATEGORIES ===
   Stream<List<Category>> streamCategories() {
-    return _cityRef('categories').snapshots().map((snapshot) {
+    return _storeRef('categories').snapshots().map((snapshot) {
       final list = snapshot.docs
           .map((doc) => Category.fromFirestore(doc.data(), doc.id))
           .toList();
@@ -46,30 +44,30 @@ class FirebaseService {
   }
 
   Future<void> addCategory(Category category) async {
-    final snapshot = await _cityRef('categories').orderBy('sortOrder', descending: true).limit(1).get();
+    final snapshot = await _storeRef('categories').orderBy('sortOrder', descending: true).limit(1).get();
     int nextOrder = 0;
     if (snapshot.docs.isNotEmpty) {
       final lastCategory = Category.fromFirestore(snapshot.docs.first.data(), snapshot.docs.first.id);
       nextOrder = lastCategory.sortOrder + 1;
     }
     final newCategory = Category(id: '', name: category.name, sortOrder: nextOrder);
-    await _cityRef('categories').add(newCategory.toFirestore());
+    await _storeRef('categories').add(newCategory.toFirestore());
   }
 
   Future<void> updateCategory(Category category) async {
-    await _cityRef('categories')
+    await _storeRef('categories')
         .doc(category.id)
         .update(category.toFirestore());
   }
 
   Future<void> deleteCategory(String id) async {
-    await _cityRef('categories').doc(id).delete();
+    await _storeRef('categories').doc(id).delete();
   }
 
   Future<void> reorderCategories(List<Category> categories) async {
     final batch = _db.batch();
     for (int i = 0; i < categories.length; i++) {
-      final ref = _cityRef('categories').doc(categories[i].id);
+      final ref = _storeRef('categories').doc(categories[i].id);
       batch.update(ref, {'sortOrder': i});
     }
     await batch.commit();
@@ -77,12 +75,12 @@ class FirebaseService {
 
   // === PRODUCTS ===
   Stream<List<Product>> streamProducts() {
-    return _cityRef('products').snapshots().map((snapshot) =>
+    return _storeRef('products').snapshots().map((snapshot) =>
         snapshot.docs.map((doc) => Product.fromFirestore(doc.data(), doc.id)).toList());
   }
 
   Future<void> addProduct(Product product) async {
-    final ref = await _cityRef('products').add(product.toFirestore());
+    final ref = await _storeRef('products').add(product.toFirestore());
     if (product.stock > 0) {
       final movement = StockMovement(
         id: '',
@@ -95,12 +93,12 @@ class FirebaseService {
       );
       final movementData = movement.toFirestore();
       movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
-      await _cityRef('stock_movements').add(movementData);
+      await _storeRef('stock_movements').add(movementData);
     }
   }
 
   Future<void> updateProduct(Product product) async {
-    final ref = _cityRef('products').doc(product.id);
+    final ref = _storeRef('products').doc(product.id);
     final snapshot = await ref.get();
     
     if (snapshot.exists) {
@@ -119,26 +117,26 @@ class FirebaseService {
         );
         final movementData = movement.toFirestore();
         movementData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
-        await _cityRef('stock_movements').add(movementData);
+        await _storeRef('stock_movements').add(movementData);
       }
     }
     await ref.update(product.toFirestore());
   }
 
   Future<void> deleteProduct(String id) async {
-    await _cityRef('products').doc(id).delete();
+    await _storeRef('products').doc(id).delete();
   }
 
   // === TRANSACTIONS ===
   Stream<tr.Transaction?> streamTransaction(String id) {
-    return _cityRef('transactions')
+    return _storeRef('transactions')
         .doc(id)
         .snapshots()
         .map((doc) => doc.exists ? tr.Transaction.fromFirestore(doc.data()!, doc.id) : null);
   }
 
   Stream<List<tr.Transaction>> streamTransactions() {
-    return _cityRef('transactions')
+    return _storeRef('transactions')
         .orderBy('created_at', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -151,12 +149,12 @@ class FirebaseService {
     txData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
     
     // Gunakan .doc() lalu .set() tanpa await agar bisa langsung selesai (offline mode)
-    final docRef = _cityRef('transactions').doc();
+    final docRef = _storeRef('transactions').doc();
     docRef.set(txData); // Tidak di-await
     
     // Decrease stock for each item using FieldValue.increment to support offline mode
     for (var item in transaction.items ?? []) {
-      final productRef = _cityRef('products').doc(item.productId);
+      final productRef = _storeRef('products').doc(item.productId);
       productRef.update({'stock': FieldValue.increment(-item.quantity)});
 
       final movement = StockMovement(
@@ -171,7 +169,7 @@ class FirebaseService {
       final movData = movement.toFirestore();
       movData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
       
-      _cityRef('stock_movements').doc().set(movData); // Tidak di-await
+      _storeRef('stock_movements').doc().set(movData); // Tidak di-await
     }
     
     return docRef;
@@ -179,7 +177,7 @@ class FirebaseService {
 
   Future<void> voidTransaction(tr.Transaction transaction, String reason) async {
     // 1. Update Transaction Status
-    final txRef = _cityRef('transactions').doc(transaction.id);
+    final txRef = _storeRef('transactions').doc(transaction.id);
     await txRef.update({
       'status': 'voided',
       'void_reason': reason,
@@ -188,7 +186,7 @@ class FirebaseService {
 
     // 2. Return Stock
     for (var item in transaction.items ?? []) {
-      final productRef = _cityRef('products').doc(item.productId);
+      final productRef = _storeRef('products').doc(item.productId);
       productRef.update({'stock': FieldValue.increment(item.quantity)});
 
       // 3. Log Stock Movement IN
@@ -204,7 +202,7 @@ class FirebaseService {
       final movData = movement.toFirestore();
       movData['expires_at'] = Timestamp.fromDate(DateTime.now().add(const Duration(days: 365)));
       
-      _cityRef('stock_movements').doc().set(movData);
+      _storeRef('stock_movements').doc().set(movData);
     }
   }
 
@@ -228,7 +226,7 @@ class FirebaseService {
         startDate = DateTime(now.year, now.month, now.day);
     }
     
-    return _cityRef('stock_movements')
+    return _storeRef('stock_movements')
         .where('created_at', isGreaterThanOrEqualTo: startDate.toIso8601String())
         .orderBy('created_at', descending: true)
         .snapshots()
@@ -282,7 +280,7 @@ class FirebaseService {
       final earliestDate = startDate.isBefore(chartStartDate) ? startDate : chartStartDate;
       final startStr = earliestDate.toIso8601String();
 
-      final txSnapshot = await _cityRef('transactions')
+      final txSnapshot = await _storeRef('transactions')
           .where('created_at', isGreaterThanOrEqualTo: startStr)
           .get();
 
@@ -392,7 +390,7 @@ class FirebaseService {
         'total_qty': e.value,
       }).toList();
 
-      final prodSnapshot = await _cityRef('products').get();
+      final prodSnapshot = await _storeRef('products').get();
       int totalProducts = prodSnapshot.docs.length;
 
       return {
@@ -459,7 +457,7 @@ class FirebaseService {
     final earliestDate = startDate.isBefore(chartStartDate) ? startDate : chartStartDate;
     final startStr = earliestDate.toIso8601String();
 
-    return _cityRef('transactions')
+    return _storeRef('transactions')
         .where('created_at', isGreaterThanOrEqualTo: startStr)
         .snapshots()
         .asyncMap((txSnapshot) async {
@@ -562,7 +560,7 @@ class FirebaseService {
             'total_qty': e.value,
           }).toList();
 
-          final prodSnapshot = await _cityRef('products').get();
+          final prodSnapshot = await _storeRef('products').get();
           int totalProducts = prodSnapshot.docs.length;
 
           return {

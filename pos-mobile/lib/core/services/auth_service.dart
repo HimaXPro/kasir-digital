@@ -45,8 +45,8 @@ class AuthService {
         email: email,
         name: 'Kasir',
         role: 'kasir',
-        provinceId: 'jatim',
-        cityId: 'malang',
+        storeId: 'bhayangkari_pusat',
+        storeName: 'Bhayangkari Pusat',
       );
       await _db.collection('users').doc(uid).set(newUser.toFirestore());
       return newUser;
