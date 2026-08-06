@@ -513,7 +513,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           _buildRoleButton('owner', Icons.admin_panel_settings, AppTheme.primary),
                         ],
                       ),
-                        const Spacer(),
+                    ],
+                  ),
+                  const Spacer(),
                         // Footer
                         Padding(
                           padding: const EdgeInsets.only(top: 24.0, bottom: 24.0),
