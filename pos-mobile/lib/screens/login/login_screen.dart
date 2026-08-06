@@ -422,29 +422,36 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
 
                         const SizedBox(height: 24),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'powered by HimaXPro',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF64748B),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Image.asset(
-                              'assets/images/logo_himaxpro.png',
-                              width: 80,
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
                 ),
+              ),
+            ),
+          ),
+          // HimaXPro footer
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'powered by HimaXPro',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF64748B),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Image.asset(
+                    'assets/images/logo_himaxpro.png',
+                    width: 80,
+                  ),
+                ],
               ),
             ),
           ),

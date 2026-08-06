@@ -32,46 +32,57 @@ class _AppEntry extends StatelessWidget {
         if (auth.isLoading) {
           return Scaffold(
             backgroundColor: const Color(0xFF4F46E5),
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            body: SafeArea(
+              child: Stack(
                 children: [
-                  Image.asset(
-                    'assets/images/logo_bhayangkari.jpg',
-                    width: 120,
-                    height: 120,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Kasir Digital | UMKM BHAYANGKARI',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo_bhayangkari.jpg',
+                          width: 120,
+                          height: 120,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Kasir Digital | UMKM BHAYANGKARI',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        const CircularProgressIndicator(color: Colors.white54),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  const CircularProgressIndicator(color: Colors.white54),
-                  const SizedBox(height: 48),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'powered by HimaXPro',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'powered by HimaXPro',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Image.asset(
+                            'assets/images/logo_himaxpro.png',
+                            width: 80,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Image.asset(
-                        'assets/images/logo_himaxpro.png',
-                        width: 80,
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

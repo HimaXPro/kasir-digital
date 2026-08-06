@@ -153,25 +153,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       }),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'powered by HimaXPro',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Image.asset(
-                        'assets/images/logo_himaxpro.png',
-                        width: 60,
-                      ),
-                    ],
-                  ),
                 ],
               ),
               actions: [
@@ -338,25 +319,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       );
                     }),
                   ),
-                  const SizedBox(height: 24),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'powered by HimaXPro',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Image.asset(
-                        'assets/images/logo_himaxpro.png',
-                        width: 60,
-                      ),
-                    ],
-                  ),
                 ],
               ),
               actions: [
@@ -499,50 +461,60 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
-        : Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      'assets/images/logo_bhayangkari.jpg',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Siapa Anda?',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Pilih peran untuk melanjutkan',
-                    style: GoogleFonts.inter(
-                      color: Colors.white54,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    alignment: WrapAlignment.center,
+        : Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildRoleButton('kasir', Icons.point_of_sale, Colors.blue),
-                      _buildRoleButton('manager', Icons.inventory_2, AppTheme.warning),
-                      _buildRoleButton('owner', Icons.admin_panel_settings, AppTheme.primary),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/logo_bhayangkari.jpg',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Siapa Anda?',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Pilih peran untuk melanjutkan',
+                        style: GoogleFonts.inter(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          _buildRoleButton('kasir', Icons.point_of_sale, Colors.blue),
+                          _buildRoleButton('manager', Icons.inventory_2, AppTheme.warning),
+                          _buildRoleButton('owner', Icons.admin_panel_settings, AppTheme.primary),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 48),
-                  Column(
+                ),
+              ),
+              // Footer
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 24.0),
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
@@ -560,9 +532,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
     );
   }
