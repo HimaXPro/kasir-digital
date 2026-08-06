@@ -43,9 +43,15 @@ class PrintService {
 
     bluetooth.printNewLine();
     
-    // Note: Mencetak gambar beresolusi tinggi/JPEG ke printer thermal Bluetooth 
-    // seringkali menyebabkan printer mengalami buffer overflow dan langsung terputus (disconnect).
-    // Oleh karena itu, kita hanya mencetak teks saja untuk memastikan stabilitas.
+    // Print Logo (menggunakan gambar yang sudah di-resize & hitam-putih agar aman)
+    try {
+      ByteData bytesAsset = await rootBundle.load("assets/images/logo_print.jpg");
+      Uint8List imageBytes = bytesAsset.buffer.asUint8List(bytesAsset.offsetInBytes, bytesAsset.lengthInBytes);
+      bluetooth.printImageBytes(imageBytes);
+      bluetooth.printNewLine();
+    } catch (e) {
+      // Ignore if image fails to load or print
+    }
 
     bluetooth.printCustom("UMKM BHAYANGKARI", 2, 1);
     bluetooth.printCustom("-------------------------------", 0, 1);
