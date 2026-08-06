@@ -1,4 +1,5 @@
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class PrintService {
@@ -41,8 +42,12 @@ class PrintService {
     final currency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     bluetooth.printNewLine();
-    bluetooth.printCustom("KASIR DIGITAL", 2, 1);
-    bluetooth.printCustom("Point of Sale System", 0, 1);
+    
+    // Note: Mencetak gambar beresolusi tinggi/JPEG ke printer thermal Bluetooth 
+    // seringkali menyebabkan printer mengalami buffer overflow dan langsung terputus (disconnect).
+    // Oleh karena itu, kita hanya mencetak teks saja untuk memastikan stabilitas.
+
+    bluetooth.printCustom("UMKM BHAYANGKARI", 2, 1);
     bluetooth.printCustom("-------------------------------", 0, 1);
     
     bluetooth.printLeftRight("No:", transactionData['invoice_number'] ?? '-', 0);
