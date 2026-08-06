@@ -61,9 +61,9 @@ export async function createBranchAccount(data: {
       .doc('store_pins');
 
     await pinsRef.set({
-      pin_kasir: '',
-      pin_manager: '',
-      pin_owner: ''
+      pin_kasir: '111111',
+      pin_manager: '222222',
+      pin_owner: '333333'
     });
 
     return { success: true, id: branchId };
