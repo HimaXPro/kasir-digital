@@ -136,7 +136,8 @@ class _LoginScreenState extends State<LoginScreen>
           LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight - 48, // 48 is top+bottom padding
@@ -157,10 +158,10 @@ class _LoginScreenState extends State<LoginScreen>
                                 children: [
                         Center(
                           child: Container(
-                            width: 100,
-                            height: 100,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.primary.withAlpha(50),
@@ -170,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                               child: Image.asset(
                                 'assets/images/logo_bhayangkari.jpg',
                                 fit: BoxFit.cover,
@@ -178,31 +179,31 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
                           'Kasir Digital\nUMKM BHAYANGKARI',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
-                          'Masuk ke akun Anda untuk melanjutkan',
+                          'Masuk ke akun Anda',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: const Color(0xFF64748B),
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
 
                         // Card form
                         Container(
-                          padding: const EdgeInsets.all(28),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E293B),
                             borderRadius: BorderRadius.circular(20),
@@ -304,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
 
                                 // Password
                                 Text(
@@ -410,7 +411,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           ),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 
                                 // Lupa Password Button
                                 Center(
@@ -436,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen>
                             const Spacer(),
                             // HimaXPro footer
                             Padding(
-                              padding: const EdgeInsets.only(top: 24.0),
+                              padding: const EdgeInsets.only(top: 16.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

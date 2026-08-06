@@ -464,6 +464,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
         : LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
@@ -502,7 +504,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           fontSize: 14,
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 32),
                       Wrap(
                         spacing: 16,
                         runSpacing: 16,
