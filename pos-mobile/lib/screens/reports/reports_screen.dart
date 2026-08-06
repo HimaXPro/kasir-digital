@@ -414,7 +414,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               builder: (_) => ReceiptDialog(
                                 transaction: t,
                                 storeName: 'KASIR DIGITAL',
-                                location: user?.storeName.toUpperCase() ?? '',
+                                location: [user?.storeName, user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                                 canVoid: true,
                               ),
                             );

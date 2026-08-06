@@ -5,6 +5,8 @@ class AppUser {
   final String role; // 'owner', 'manager', 'kasir'
   final String storeId;
   final String storeName;
+  final String? provinceId;
+  final String? cityId;
   final String subscriptionStatus;
   final DateTime? trialExpiresAt;
 
@@ -15,6 +17,8 @@ class AppUser {
     required this.role,
     required this.storeId,
     required this.storeName,
+    this.provinceId,
+    this.cityId,
     this.subscriptionStatus = 'active',
     this.trialExpiresAt,
   });
@@ -27,6 +31,8 @@ class AppUser {
       role: data['role'] ?? 'kasir',
       storeId: data['store_id'] ?? 'bhayangkari_pusat',
       storeName: data['store_name'] ?? 'Bhayangkari Pusat',
+      provinceId: data['provinceId'],
+      cityId: data['cityId'],
       subscriptionStatus: data['subscription_status'] ?? 'active',
       trialExpiresAt: data['trial_expires_at'] != null ? DateTime.parse(data['trial_expires_at']) : null,
     );
@@ -39,6 +45,8 @@ class AppUser {
       'role': role,
       'store_id': storeId,
       'store_name': storeName,
+      if (provinceId != null) 'provinceId': provinceId,
+      if (cityId != null) 'cityId': cityId,
       'subscription_status': subscriptionStatus,
       'trial_expires_at': trialExpiresAt?.toIso8601String(),
     };

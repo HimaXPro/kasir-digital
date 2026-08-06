@@ -30,8 +30,10 @@ export async function createBranchAccount(data: {
         email: data.email,
         name: data.name,
         role: 'branch_pos', // Role khusus mesin kasir (tidak bisa masuk web admin)
+        store_id: branchId, // IMPORTANT: We give the mobile app the branchId so its data is isolated!
+        store_name: data.name,
         provinceId: data.provinceId,
-        cityId: branchId, // IMPORTANT: We give the mobile app the branchId so its data is isolated!
+        cityId: data.cityId,
         subscription_status: 'trial',
         trial_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
@@ -43,7 +45,7 @@ export async function createBranchAccount(data: {
       name: data.name,
       email: data.email || '',
       provinceId: data.provinceId,
-      cityId: data.cityId, // Keep original Emsifa city ID for reference
+      cityId: data.cityId,
       uid: uid,
       isActive: true,
       subscription_status: 'trial',
@@ -53,9 +55,7 @@ export async function createBranchAccount(data: {
 
     // 3. Initialize empty PINs for the new branch using branchId as the container
     const pinsRef = adminDb
-      .collection('provinces')
-      .doc(data.provinceId)
-      .collection('cities')
+      .collection('stores')
       .doc(branchId) // Isolated by branchId
       .collection('settings')
       .doc('store_pins');
@@ -95,7 +95,7 @@ export async function toggleBranchStatus(uid: string, branchId: string, currentS
   }
 }
 
-export async function deleteBranch(branchId: string, uid: string, provinceId: string, cityId: string) {
+export async function deleteBranch(branchId: string, uid: string) {
   try {
     // 1. Delete from Firebase Auth if it exists
     if (uid && uid !== branchId) {
@@ -114,10 +114,8 @@ export async function deleteBranch(branchId: string, uid: string, provinceId: st
 
     // 4. Delete the store_pins document to clean up (optional but good for cleanup)
     await adminDb
-      .collection('provinces')
-      .doc(provinceId)
-      .collection('cities')
-      .doc(cityId)
+      .collection('stores')
+      .doc(branchId)
       .collection('settings')
       .doc('store_pins')
       .delete();

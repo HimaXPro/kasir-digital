@@ -47,6 +47,8 @@ class AuthService {
         role: 'kasir',
         storeId: 'bhayangkari_pusat',
         storeName: 'Bhayangkari Pusat',
+        provinceId: 'DKI JAKARTA',
+        cityId: 'JAKARTA SELATAN',
       );
       await _db.collection('users').doc(uid).set(newUser.toFirestore());
       return newUser;

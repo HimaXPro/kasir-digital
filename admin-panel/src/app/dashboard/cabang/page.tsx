@@ -9,9 +9,9 @@ interface BranchInfo {
   id: string;
   name: string;
   email: string;
-  provinceId: string;
-  cityId: string;
   uid: string;
+  provinceId?: string; // Optional because we just added it back, older stores might not have it
+  cityId?: string;     // Optional because older stores might not have it
   isActive?: boolean;
   subscription_status?: 'trial' | 'active';
   trial_expires_at?: string;
@@ -77,6 +77,7 @@ export default function CabangPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filters
+  const [filterName, setFilterName] = useState('');
   const [filterProvince, setFilterProvince] = useState('');
   const [filterCity, setFilterCity] = useState('');
 
@@ -145,15 +146,18 @@ export default function CabangPage() {
     }
   }, [formData.provinceId]);
 
+
   const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.provinceName || !formData.cityName) {
-      alert("Harap pilih provinsi dan kota!");
+    if (!formData.name || !formData.provinceName || !formData.cityName) {
+      alert("Harap lengkapi semua kolom termasuk provinsi dan kota!");
       return;
     }
     setIsSubmitting(true);
+    
     const finalProvinceId = formatId(formData.provinceName);
     const finalCityId = formatId(formData.cityName);
+    
     const res = await createBranchAccount({
       name: formData.name,
       email: formData.email,
@@ -210,7 +214,7 @@ export default function CabangPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setIsSubmitting(true);
-    const res = await deleteBranch(deleteTarget.id, deleteTarget.uid, deleteTarget.provinceId, deleteTarget.cityId);
+    const res = await deleteBranch(deleteTarget.id, deleteTarget.uid);
     setIsSubmitting(false);
     
     if (res.success) {
@@ -233,12 +237,13 @@ export default function CabangPage() {
     setIsEditModalOpen(true);
   };
 
-  const availableProvinces = Array.from(new Set(branches.map(b => b.provinceId)));
+  const availableProvinces = Array.from(new Set(branches.map(b => b.provinceId).filter(Boolean))) as string[];
   const availableCities = filterProvince 
-    ? Array.from(new Set(branches.filter(b => b.provinceId === filterProvince).map(b => b.cityId)))
+    ? Array.from(new Set(branches.filter(b => b.provinceId === filterProvince).map(b => b.cityId).filter(Boolean))) as string[]
     : [];
 
   const filteredBranches = branches.filter(b => {
+    if (filterName && !b.name.toLowerCase().includes(filterName.toLowerCase())) return false;
     if (filterProvince && b.provinceId !== filterProvince) return false;
     if (filterCity && b.cityId !== filterCity) return false;
     return true;
@@ -262,6 +267,16 @@ export default function CabangPage() {
 
       <div className="card" style={{ overflowX: 'auto' }}>
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1', minWidth: '200px' }}>
+            <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Cari Cabang</label>
+            <input 
+              type="text"
+              className="input-field"
+              placeholder="Ketik nama cabang..."
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+            />
+          </div>
           <div style={{ flex: '1', minWidth: '200px' }}>
             <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)'}}>Filter Provinsi</label>
             <select 
@@ -312,8 +327,14 @@ export default function CabangPage() {
                   <td style={{ padding: '16px 12px', fontWeight: 600 }}>{b.name}</td>
                   <td style={{ padding: '16px 12px', color: 'var(--text-muted)' }}>{b.email || '-'}</td>
                   <td style={{ padding: '16px 12px', color: '#64748b' }}>
-                    <div style={{ fontSize: '12px' }}>P: {b.provinceId}</div>
-                    <div style={{ fontSize: '12px' }}>K: {b.cityId}</div>
+                    {b.provinceId ? (
+                      <>
+                        <div style={{ fontSize: '12px' }}>P: {b.provinceId}</div>
+                        <div style={{ fontSize: '12px' }}>K: {b.cityId}</div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: '12px', fontStyle: 'italic' }}>Tidak ada data</div>
+                    )}
                   </td>
                   <td style={{ padding: '16px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
@@ -367,7 +388,7 @@ export default function CabangPage() {
             {filteredBranches.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                  Tidak ada cabang yang sesuai dengan filter.
+                  Tidak ada cabang yang sesuai.
                 </td>
               </tr>
             )}
@@ -385,10 +406,19 @@ export default function CabangPage() {
           <div className="card" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '8px'}}>Tambah Cabang Baru</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '13px' }}>
-              Mendaftarkan struktur cabang baru ke dalam database.
+              Mendaftarkan toko/cabang baru ke dalam database.
             </p>
             <form onSubmit={handleSubmitCreate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
+              <div>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Nama Toko / Cabang</label>
+                <input 
+                  type="text" className="input-field" required 
+                  placeholder="misal: Kasir Digital Cabang Sudirman"
+                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                />
+              </div>
+
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Provinsi</label>
                 <select 
@@ -425,15 +455,6 @@ export default function CabangPage() {
                 </select>
               </div>
 
-              <div>
-                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Nama Toko / Cabang</label>
-                <input 
-                  type="text" className="input-field" required 
-                  placeholder="misal: Kasir Digital Cabang Sudirman"
-                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                />
-              </div>
-
               <div style={{ height: '1px', background: 'var(--surface-border)', margin: '4px 0' }}></div>
               <p style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '500', margin: 0 }}>Akun Mesin Kasir (POS):</p>
 
@@ -459,7 +480,7 @@ export default function CabangPage() {
                 <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'var(--surface)', border: '1px solid var(--surface-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
                   Batal
                 </button>
-                <button type="submit" className="btn-primary" disabled={isSubmitting || !formData.provinceName || !formData.cityName}>
+                <button type="submit" className="btn-primary" disabled={isSubmitting || !formData.name || !formData.provinceName || !formData.cityName}>
                   {isSubmitting ? 'Mendaftarkan...' : 'Simpan Cabang'}
                 </button>
               </div>
@@ -477,9 +498,6 @@ export default function CabangPage() {
         }}>
           <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
             <h2 style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '8px'}}>Edit Cabang</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '13px' }}>
-              Anda hanya dapat mengubah nama cabang. Pengaturan lokasi tidak dapat diubah karena terikat pada data historis.
-            </p>
             <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Nama Toko / Cabang</label>
@@ -528,7 +546,7 @@ export default function CabangPage() {
                       onClick={(e) => {
                         try {
                           (e.target as HTMLInputElement).showPicker();
-                        } catch (err) {} // fallback if browser doesn't support showPicker
+                        } catch (err) {} 
                       }}
                       value={editData.trial_expires_at ? new Date(editData.trial_expires_at).toLocaleString('sv-SE', { timeZoneName: 'short' }).substring(0, 16).replace(' ', 'T') : ''} 
                       onChange={(e) => {
