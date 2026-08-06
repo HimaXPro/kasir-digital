@@ -133,19 +133,28 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
           // Login form
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: SlideTransition(
-                  position: _slideAnim,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 48, // 48 is top+bottom padding
+                  ),
+                  child: IntrinsicHeight(
+                    child: FadeTransition(
+                      opacity: _fadeAnim,
+                      child: SlideTransition(
+                        position: _slideAnim,
+                        child: Column(
+                          children: [
+                            const Spacer(),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
                         Center(
                           child: Container(
                             width: 100,
@@ -421,39 +430,41 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 24),
-                      ],
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            // HimaXPro footer
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'powered by HimaXPro',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      color: const Color(0xFF64748B),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Image.asset(
+                                    'assets/images/logo_himaxpro.png',
+                                    width: 80,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          // HimaXPro footer
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'powered by HimaXPro',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF64748B),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Image.asset(
-                    'assets/images/logo_himaxpro.png',
-                    width: 80,
-                  ),
-                ],
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
