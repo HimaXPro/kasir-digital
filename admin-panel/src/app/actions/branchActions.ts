@@ -78,8 +78,8 @@ export async function toggleBranchStatus(uid: string, branchId: string, currentS
     const newStatus = !currentStatus;
     
     // 1. Update Firebase Auth user (disable/enable)
-    // Only attempt if it's a real Auth uid (not equal to branchId which we used as fallback)
-    if (uid && uid !== branchId) {
+    // Only attempt if it's a real Auth uid
+    if (uid) {
       await adminAuth.updateUser(uid, { disabled: !newStatus });
     }
 
@@ -98,7 +98,7 @@ export async function toggleBranchStatus(uid: string, branchId: string, currentS
 export async function deleteBranch(branchId: string, uid: string) {
   try {
     // 1. Delete from Firebase Auth if it exists
-    if (uid && uid !== branchId) {
+    if (uid) {
       try {
         await adminAuth.deleteUser(uid);
       } catch (authErr) {
@@ -140,7 +140,7 @@ export async function updateBranch(branchId: string, newName: string, uid?: stri
     await adminDb.collection('branches').doc(branchId).update(branchUpdates);
 
     // Update data in users collection if mapping exists
-    if (uid && uid !== branchId) {
+    if (uid) {
       await adminDb.collection('users').doc(uid).update(branchUpdates)
         .catch(err => console.warn('User mapping update warning:', err));
       
