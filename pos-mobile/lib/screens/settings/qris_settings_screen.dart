@@ -47,6 +47,13 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       return;
     }
 
+    if (!PaymentService.isStaticQris(qris)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda tidak bisa menggunakan QRIS Transaksi (Dinamis). Harap scan QRIS Toko (Statis) Anda.')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final fbService = FirebaseService(user);

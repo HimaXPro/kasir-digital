@@ -44,6 +44,23 @@ class PaymentService {
     return 'Nama Toko Tidak Ditemukan';
   }
 
+  static bool isStaticQris(String qris) {
+    try {
+      int i = 0;
+      while (i < qris.length - 4) {
+        String tag = qris.substring(i, i + 2);
+        int length = int.parse(qris.substring(i + 2, i + 4));
+        if (tag == '54') {
+          return false; // Ada nominal transaksi, berarti bukan Static QRIS murni
+        }
+        i = i + 4 + length;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Generate QRIS dengan menyisipkan Tag 54 (Nominal)
   String _generateDynamicQris(String baseQris, double amount) {
     // 1. Hapus CRC lama (Tag 6304 + 4 digit hex) -> Total 8 karakter terakhir
@@ -57,9 +74,25 @@ class PaymentService {
       }
     }
 
-    // 2. Jika base QRIS sudah ada tag 54, hapus tag 54 tersebut
-    // Tag 54 biasanya berada di antara tag 53 (Currency) dan 58 (Country Code)
-    // Untuk amannya, kita akan sisipkan tag 54 sebelum tag 58, atau di akhir jika tidak ketemu
+    // 2. Ubah Tag 01 menjadi 12 (Dynamic)
+    if (qrisTanpaCrc.contains("010211")) {
+      qrisTanpaCrc = qrisTanpaCrc.replaceFirst("010211", "010212");
+    }
+
+    // 3. Jika base QRIS sudah ada tag 54, hapus tag 54 tersebut (untuk jaga-jaga)
+    try {
+      int i = 0;
+      while (i < qrisTanpaCrc.length) {
+        String tag = qrisTanpaCrc.substring(i, i + 2);
+        int length = int.parse(qrisTanpaCrc.substring(i + 2, i + 4));
+        if (tag == '54') {
+          qrisTanpaCrc = qrisTanpaCrc.substring(0, i) + qrisTanpaCrc.substring(i + 4 + length);
+          break; // Anggap hanya ada satu Tag 54
+        }
+        i = i + 4 + length;
+      }
+    } catch (_) {}
+
     int tag58Idx = qrisTanpaCrc.indexOf("5802");
     
     // Siapkan nilai tag 54
