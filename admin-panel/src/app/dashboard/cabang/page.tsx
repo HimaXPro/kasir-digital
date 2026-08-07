@@ -65,6 +65,14 @@ const Countdown = ({ expiresAt }: { expiresAt: string }) => {
   );
 };
 
+const formatDateForInput = (isoString?: string) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  const localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+  return localDate.toISOString().slice(0, 16);
+};
+
 export default function CabangPage() {
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -504,7 +512,7 @@ export default function CabangPage() {
                           (e.target as HTMLInputElement).showPicker();
                         } catch (err) {} 
                       }}
-                      value={formData.trial_expires_at ? new Date(formData.trial_expires_at).toLocaleString('sv-SE', { timeZoneName: 'short' }).substring(0, 16).replace(' ', 'T') : ''} 
+                      value={formatDateForInput(formData.trial_expires_at)} 
                       onChange={(e) => {
                         if (e.target.value) {
                           const date = new Date(e.target.value);
@@ -588,7 +596,7 @@ export default function CabangPage() {
                           (e.target as HTMLInputElement).showPicker();
                         } catch (err) {} 
                       }}
-                      value={editData.trial_expires_at ? new Date(editData.trial_expires_at).toLocaleString('sv-SE', { timeZoneName: 'short' }).substring(0, 16).replace(' ', 'T') : ''} 
+                      value={formatDateForInput(editData.trial_expires_at)} 
                       onChange={(e) => {
                         if (e.target.value) {
                           const date = new Date(e.target.value);
