@@ -484,9 +484,40 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Ambil dari Galeri'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _processImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Ambil dari Kamera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _processImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processImage(ImageSource source) async {
     try {
       final picked = await _picker.pickImage(
-        source: ImageSource.gallery, 
+        source: source, 
         imageQuality: 50,
         maxWidth: 400,
         maxHeight: 400,
@@ -497,7 +528,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        SnackBar(content: Text('Gagal memilih gambar: $e'), backgroundColor: AppTheme.danger),
+        SnackBar(content: Text('Gagal mengambil gambar: $e'), backgroundColor: AppTheme.danger),
       );
     }
   }

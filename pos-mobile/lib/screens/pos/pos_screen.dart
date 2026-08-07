@@ -257,7 +257,27 @@ class _PosScreenState extends State<PosScreen> {
           );
 
           if (isPaid != true) {
-            // Jika dibatalkan atau gagal, jangan lanjutkan cetak
+            // Jika dibatalkan atau gagal, batalkan transaksi dan kembalikan stok
+            final trxToVoid = tr.Transaction(
+              id: addedTrx.id,
+              invoiceNumber: transaction.invoiceNumber,
+              paymentMethod: transaction.paymentMethod,
+              grandTotal: transaction.grandTotal,
+              changeAmount: transaction.changeAmount,
+              createdAt: transaction.createdAt,
+              items: transaction.items,
+              customerName: transaction.customerName,
+              orderNote: transaction.orderNote,
+              cashierName: transaction.cashierName,
+              status: transaction.status,
+            );
+            await _fb.voidTransaction(trxToVoid, 'Dibatalkan kasir (QRIS batal)');
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pembayaran QRIS dibatalkan.')),
+              );
+            }
             return;
           }
         } else {

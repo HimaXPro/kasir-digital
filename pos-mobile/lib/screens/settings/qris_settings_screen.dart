@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/firebase_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -38,7 +39,13 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
     if (user == null) return;
 
     final qris = _qrisController.text.trim();
-    if (qris.isNotEmpty && !qris.startsWith('000201')) {
+    if (qris.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Teks QRIS tidak boleh kosong')),
+      );
+      return;
+    }
+    if (!qris.startsWith('000201')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Format QRIS tidak valid. Harus berawalan 000201...')),
       );
@@ -80,6 +87,47 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
           const SnackBar(content: Text('QRIS berhasil dipindai!')),
         );
       }
+    }
+  }
+
+  Future<void> _scanFromGallery() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final controller = MobileScannerController();
+      final BarcodeCapture? capture = await controller.analyzeImage(image.path);
+      
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        final String? code = capture.barcodes.first.rawValue;
+        if (code != null) {
+          setState(() {
+            _qrisController.text = code;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('QRIS berhasil dipindai dari galeri!')),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tidak dapat menemukan QR Code pada gambar')),
+          );
+        }
+      }
+      controller.dispose();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memindai gambar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -159,6 +207,20 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                       onPressed: () => setState(() => _isScanning = true),
                       icon: const Icon(Icons.qr_code_scanner_rounded),
                       label: const Text('Scan QRIS dari Kamera'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        foregroundColor: AppTheme.primary,
+                        side: const BorderSide(color: AppTheme.primary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _scanFromGallery,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: const Text('Ambil dari Galeri'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         foregroundColor: AppTheme.primary,
