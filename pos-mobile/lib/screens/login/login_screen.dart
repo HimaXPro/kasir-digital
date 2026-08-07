@@ -5,6 +5,7 @@ import '../../core/providers/auth_provider.dart' as my_auth;
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -510,6 +511,22 @@ class _LoginScreenState extends State<LoginScreen>
                             Image.asset(
                               'assets/images/logo_himaxpro.png',
                               width: 80,
+                            ),
+                            const SizedBox(height: 8),
+                            FutureBuilder<PackageInfo>(
+                              future: PackageInfo.fromPlatform(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(
+                                    'v${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                                    style: GoogleFonts.inter(
+                                      color: const Color(0xFF475569),
+                                      fontSize: 11,
+                                    ),
+                                  );
+                                }
+                                return const SizedBox();
+                              },
                             ),
                           ],
                         ),

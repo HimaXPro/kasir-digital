@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/app_user.dart';
 import 'subscription_lock_screen.dart';
@@ -537,6 +539,22 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                             Image.asset(
                               'assets/images/logo_himaxpro.png',
                               width: 60,
+                            ),
+                            const SizedBox(height: 8),
+                            FutureBuilder<PackageInfo>(
+                              future: PackageInfo.fromPlatform(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(
+                                    'v${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white54,
+                                      fontSize: 10,
+                                    ),
+                                  );
+                                }
+                                return const SizedBox();
+                              },
                             ),
                           ],
                         ),
