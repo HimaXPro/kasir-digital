@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 
@@ -87,8 +89,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         final isSelected = _method == m['key'];
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _method = m['key'] as String),
+                            onTap: () {
+                              if (m['key'] == 'qris') {
+                                final user = context.read<AuthProvider>().currentUser;
+                                final qrisBaseString = user?.qrisBaseString;
+                                if (qrisBaseString == null || qrisBaseString.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('QRIS belum diatur. Silakan tambahkan QRIS di Pengaturan terlebih dahulu.'),
+                                      backgroundColor: AppTheme.danger,
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+                              setState(() => _method = m['key'] as String);
+                            },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               margin: const EdgeInsets.only(right: 6),
