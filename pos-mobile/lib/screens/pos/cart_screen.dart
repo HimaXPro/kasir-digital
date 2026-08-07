@@ -105,13 +105,17 @@ class _CartScreenState extends State<CartScreen> {
             const Icon(Icons.shopping_cart_rounded,
                 color: AppTheme.primary, size: 20),
             const SizedBox(width: 8),
-            Text('Keranjang Belanja',
+            Text('Keranjang',
                 style: GoogleFonts.inter(
                     color: AppTheme.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w800)),
-            const Spacer(),
-            Container(
+          ],
+        ),
+        actions: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.primaryLight,
@@ -125,37 +129,38 @@ class _CartScreenState extends State<CartScreen> {
                     fontWeight: FontWeight.w700),
               ),
             ),
-            if (widget.cart.isNotEmpty)
-              IconButton(
-                icon: const Icon(Icons.delete_sweep, color: AppTheme.danger),
-                tooltip: 'Hapus Semua',
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text('Hapus Keranjang', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                      content: const Text('Anda yakin ingin menghapus semua produk di keranjang?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            widget.onClearCart();
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Hapus Semua', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
+          ),
+          if (widget.cart.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep, color: AppTheme.danger),
+              tooltip: 'Hapus Semua',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text('Hapus Keranjang', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                    content: const Text('Anda yakin ingin menghapus semua produk di keranjang?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Batal'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          widget.onClearCart();
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Hapus Semua', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
