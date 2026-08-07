@@ -74,31 +74,101 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _showForgotPasswordDialog() async {
-    if (_emailCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        const SnackBar(content: Text('Masukkan email Anda terlebih dahulu di kolom email!'), backgroundColor: AppTheme.warning),
-      );
-      return;
-    }
+    final resetEmailCtrl = TextEditingController(text: _emailCtrl.text);
+    bool isResetting = false;
 
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailCtrl.text.trim());
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        const SnackBar(
-          content: Text('Link reset password telah dikirim ke email Anda.'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengirim email reset: ${e.toString()}'),
-          backgroundColor: AppTheme.danger,
-        ),
-      );
-    }
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Reset Password',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Masukkan email akun Anda untuk menerima tautan reset password.',
+                  style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: resetEmailCtrl,
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: 'Email Anda',
+                    hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B)),
+                    prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF64748B), size: 20),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF334155)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF334155)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppTheme.primary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal', style: GoogleFonts.inter(color: const Color(0xFF94A3B8))),
+              ),
+              ElevatedButton(
+                onPressed: isResetting ? null : () async {
+                  final email = resetEmailCtrl.text.trim();
+                  if (email.isEmpty) {
+                    ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
+                      const SnackBar(content: Text('Email tidak boleh kosong!'), backgroundColor: AppTheme.warning),
+                    );
+                    return;
+                  }
+                  
+                  setDialogState(() => isResetting = true);
+                  
+                  try {
+                    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
+                      const SnackBar(content: Text('Link reset password telah dikirim ke email Anda.'), backgroundColor: AppTheme.success),
+                    );
+                  } catch (e) {
+                    if (!ctx.mounted) return;
+                    setDialogState(() => isResetting = false);
+                    ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
+                      SnackBar(content: Text('Gagal mengirim email reset: ${e.toString()}'), backgroundColor: AppTheme.danger),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: isResetting 
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text('Kirim Link', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          );
+        }
+      ),
+    );
   }
 
   @override
