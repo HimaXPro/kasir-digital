@@ -148,25 +148,31 @@ class _QrisDialogState extends State<QrisDialog> {
                 ],
               ),
               const SizedBox(height: 16),
-              // DEBUG BUTTON UNTUK TESTING
+              // TOMBOL KONFIRMASI MANUAL (Karena belum ada integrasi webhook Payment Gateway)
               const SizedBox(height: 12),
               ElevatedButton.icon(
-                onPressed: () {
-                  // Kita mock state secara lokal untuk testing alur UI
-                  // karena backend sesungguhnya belum online
-                  setState(() => _status = 'PAID');
-                  Future.delayed(const Duration(milliseconds: 1500), () {
-                    if (mounted) Navigator.pop(context, true);
-                  });
+                onPressed: () async {
+                  // Karena ini QRIS statis milik toko sendiri, kasir harus 
+                  // memastikan pembayaran masuk lewat M-Banking/EDC lalu menekan tombol ini.
+                  try {
+                    await widget.fbService.updateTransactionStatus(widget.transactionId, 'PAID');
+                    // Dialog akan otomatis tertutup oleh listener saat status berubah
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal mengupdate status: $e')),
+                      );
+                    }
+                  }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: AppTheme.success,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                icon: const Icon(Icons.bug_report_rounded, size: 16),
-                label: Text('Simulasikan Bayar (Testing)',
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: Text('Konfirmasi Pembayaran Selesai',
                     style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
               )
             ],

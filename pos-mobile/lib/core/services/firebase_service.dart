@@ -182,6 +182,11 @@ class FirebaseService {
     return docRef;
   }
 
+  Future<void> updateTransactionStatus(String transactionId, String status) async {
+    final txRef = _storeRef('transactions').doc(transactionId);
+    await txRef.update({'qris_status': status});
+  }
+
   Future<void> voidTransaction(tr.Transaction transaction, String reason) async {
     // 1. Update Transaction Status
     final txRef = _storeRef('transactions').doc(transaction.id);
