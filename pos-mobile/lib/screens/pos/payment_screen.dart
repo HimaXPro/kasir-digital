@@ -94,7 +94,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 final user = context.read<AuthProvider>().currentUser;
                                 final qrisBaseString = user?.qrisBaseString;
                                 if (qrisBaseString == null || qrisBaseString.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                                     const SnackBar(
                                       content: Text('QRIS belum diatur. Silakan tambahkan QRIS di Pengaturan terlebih dahulu.'),
                                       backgroundColor: AppTheme.danger,

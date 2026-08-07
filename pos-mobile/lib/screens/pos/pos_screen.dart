@@ -217,7 +217,7 @@ class _PosScreenState extends State<PosScreen> {
       Navigator.pop(context); // Close loading
 
       if (outOfStockMsg != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
           content: Text(outOfStockMsg), 
           backgroundColor: AppTheme.danger,
           duration: const Duration(seconds: 4),
@@ -238,7 +238,7 @@ class _PosScreenState extends State<PosScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
           content: Text('Gagal mengecek stok: $e'),
           backgroundColor: AppTheme.danger,
         ));
@@ -322,7 +322,7 @@ class _PosScreenState extends State<PosScreen> {
             await _fb.voidTransaction(trxToVoid, 'Dibatalkan kasir (QRIS batal)');
             
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                 const SnackBar(content: Text('Pembayaran QRIS dibatalkan.')),
               );
             }

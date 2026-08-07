@@ -376,7 +376,7 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                 ElevatedButton(
                   onPressed: () {
                     if (reasonCtrl.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
+                      ScaffoldMessenger.of(ctx)..clearSnackBars()..showSnackBar(
                         const SnackBar(content: Text('Alasan pembatalan harus diisi'), backgroundColor: AppTheme.danger),
                       );
                       return;

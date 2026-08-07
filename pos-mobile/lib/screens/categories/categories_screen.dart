@@ -88,7 +88,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                     }
                                     nav.pop();
                                   } catch (e) {
-                                    messenger.showSnackBar(
+                                    messenger..clearSnackBars()..showSnackBar(
                                       SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
                                     );
                                   } finally {

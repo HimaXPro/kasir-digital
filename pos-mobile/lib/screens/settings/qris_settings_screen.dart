@@ -41,14 +41,14 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
     if (user == null) return;
 
     if (!PaymentService.validateQris(qris)) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Format QRIS tidak valid atau merupakan QRIS palsu!')),
       );
       return;
     }
 
     if (!PaymentService.isStaticQris(qris)) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
         const SnackBar(content: Text('Anda tidak bisa menggunakan QRIS Transaksi (Dinamis). Harap scan QRIS Toko (Statis) Anda.')),
       );
       return;
@@ -63,13 +63,13 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
         setState(() {
           _qrisController.text = qris;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           const SnackBar(content: Text('QRIS berhasil disimpan!')),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('Gagal menyimpan: $e')),
         );
       }
@@ -91,13 +91,13 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
         setState(() {
           _qrisController.text = '';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           const SnackBar(content: Text('QRIS berhasil dihapus')),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('Gagal menghapus: $e')),
         );
       }
@@ -134,7 +134,7 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
             const SnackBar(content: Text('Tidak dapat menemukan QR Code pada gambar')),
           );
         }
@@ -142,7 +142,7 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       controller.dispose();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('Gagal memindai gambar: $e')),
         );
       }

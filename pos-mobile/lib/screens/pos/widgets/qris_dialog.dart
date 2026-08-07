@@ -159,7 +159,7 @@ class _QrisDialogState extends State<QrisDialog> {
                     // Dialog akan otomatis tertutup oleh listener saat status berubah
                   } catch (e) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                         SnackBar(content: Text('Gagal mengupdate status: $e')),
                       );
                     }
