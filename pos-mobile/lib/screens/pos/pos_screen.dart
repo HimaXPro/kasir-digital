@@ -60,7 +60,7 @@ class _PosScreenState extends State<PosScreen> {
     if (savedName != null && savedName.isNotEmpty) {
       setState(() => _attendantName = savedName);
     } else {
-      setState(() => _attendantName = 'Kasir / Owner');
+      setState(() => _attendantName = 'Kasir');
     }
   }
 
@@ -202,14 +202,18 @@ class _PosScreenState extends State<PosScreen> {
       final products = await _fb.getProductsByIds(ids);
       
       String? outOfStockMsg;
-      for (var item in _cart) {
-        final dbProduct = products.firstWhere(
-          (p) => p.id == item.productId, 
-          orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
-        );
-        if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
-          outOfStockMsg = 'Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
-          break;
+      if (_cart.isEmpty) {
+        outOfStockMsg = 'Keranjang kosong. Produk mungkin kehabisan stok dan dihapus otomatis.';
+      } else {
+        for (var item in _cart) {
+          final dbProduct = products.firstWhere(
+            (p) => p.id == item.productId, 
+            orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
+          );
+          if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
+            outOfStockMsg = 'Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
+            break;
+          }
         }
       }
 
@@ -249,6 +253,48 @@ class _PosScreenState extends State<PosScreen> {
   Future<void> _processPayment(
       String method, double payAmount, double discount, String customerName, String orderNote) async {
     Navigator.popUntil(context, (route) => route.isFirst);
+    
+    // Final check before actually processing to prevent double checkout exploits
+    try {
+      final ids = _cart.map((c) => c.productId).toList();
+      final products = await _fb.getProductsByIds(ids);
+      
+      String? outOfStockMsg;
+      if (_cart.isEmpty) {
+        outOfStockMsg = 'Transaksi dibatalkan. Keranjang menjadi kosong karena stok produk sudah habis ditarik kasir lain.';
+      } else {
+        for (var item in _cart) {
+          final dbProduct = products.firstWhere(
+            (p) => p.id == item.productId, 
+            orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
+          );
+          if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
+            outOfStockMsg = 'Gagal dibayar. Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
+            break;
+          }
+        }
+      }
+
+      if (outOfStockMsg != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
+            content: Text(outOfStockMsg), 
+            backgroundColor: AppTheme.danger,
+            duration: const Duration(seconds: 4),
+          ));
+        }
+        return; // Abort payment
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
+          content: Text('Gagal memvalidasi stok akhir: $e'),
+          backgroundColor: AppTheme.danger,
+        ));
+      }
+      return;
+    }
+
     try {
       final now = DateTime.now();
       final invoice = 'INV-${now.millisecondsSinceEpoch}';
@@ -515,6 +561,39 @@ class _PosScreenState extends State<PosScreen> {
 
               var products = prodSnapshot.data ?? [];
               _allProducts = products;
+
+              // Sinkronkan keranjang dengan data produk terbaru dari database
+              bool cartChanged = false;
+              for (var i = _cart.length - 1; i >= 0; i--) {
+                final cartItem = _cart[i];
+                try {
+                  final dbProduct = products.firstWhere((p) => p.id == cartItem.productId);
+                  if (cartItem.price != dbProduct.sellingPrice || cartItem.productName != dbProduct.name) {
+                    cartItem.price = dbProduct.sellingPrice;
+                    cartItem.productName = dbProduct.name;
+                    cartItem.imageUrl = dbProduct.imageUrl;
+                    cartChanged = true;
+                  }
+                  if (cartItem.quantity > dbProduct.stock) {
+                    if (dbProduct.stock <= 0) {
+                      _cart.removeAt(i);
+                    } else {
+                      cartItem.quantity = dbProduct.stock;
+                    }
+                    cartChanged = true;
+                  }
+                } catch (e) {
+                  // Produk sudah dihapus dari database
+                  _cart.removeAt(i);
+                  cartChanged = true;
+                }
+              }
+              
+              if (cartChanged) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() {});
+                });
+              }
 
               // Local Filtering
               if (_search.isNotEmpty) {

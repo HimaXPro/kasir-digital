@@ -1,8 +1,8 @@
 class CartItem {
   final String productId;
-  final String productName;
-  final double price;
-  final double costPrice;
+  String productName;
+  double price;
+  double costPrice;
   int quantity;
   String? note;
   String? imageUrl;
