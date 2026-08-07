@@ -34,17 +34,10 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
     super.dispose();
   }
 
-  Future<void> _saveQris() async {
+  Future<void> _saveQrisText(String qris) async {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
 
-    final qris = _qrisController.text.trim();
-    if (qris.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Teks QRIS tidak boleh kosong')),
-      );
-      return;
-    }
     if (!qris.startsWith('000201')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Format QRIS tidak valid. Harus berawalan 000201...')),
@@ -58,10 +51,12 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       await fbService.saveQrisBaseString(qris);
       
       if (mounted) {
+        setState(() {
+          _qrisController.text = qris;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pengaturan QRIS berhasil disimpan')),
+          const SnackBar(content: Text('QRIS berhasil disimpan!')),
         );
-        Navigator.pop(context); // Kembali
       }
     } catch (e) {
       if (mounted) {
@@ -74,18 +69,41 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
     }
   }
 
+  Future<void> _deleteQris() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final fbService = FirebaseService(user);
+      await fbService.saveQrisBaseString('');
+      
+      if (mounted) {
+        setState(() {
+          _qrisController.text = '';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('QRIS berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _onDetect(BarcodeCapture capture) {
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty) {
       final String? code = barcodes.first.rawValue;
       if (code != null) {
-        setState(() {
-          _qrisController.text = code;
-          _isScanning = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('QRIS berhasil dipindai!')),
-        );
+        setState(() => _isScanning = false);
+        _saveQrisText(code);
       }
     }
   }
@@ -103,14 +121,7 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       if (capture != null && capture.barcodes.isNotEmpty) {
         final String? code = capture.barcodes.first.rawValue;
         if (code != null) {
-          setState(() {
-            _qrisController.text = code;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('QRIS berhasil dipindai dari galeri!')),
-            );
-          }
+          _saveQrisText(code);
         }
       } else {
         if (mounted) {
@@ -170,7 +181,7 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Masukkan kode QRIS Statis cabang Anda di bawah ini, atau gunakan kamera untuk men-scan stiker QRIS fisik secara otomatis.',
+              'Gunakan kamera atau ambil dari galeri untuk men-scan stiker QRIS fisik cabang Anda.',
               style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 24),
@@ -185,26 +196,41 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Teks Mentah QRIS',
+                    'Status QRIS',
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _qrisController,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: '000201010211...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _qrisController.text.isNotEmpty ? AppTheme.successLight : AppTheme.dangerLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger),
                     ),
-                    style: GoogleFonts.inter(fontSize: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _qrisController.text.isNotEmpty ? Icons.check_circle : Icons.cancel,
+                          color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _qrisController.text.isNotEmpty ? 'Tersimpan (Aktif)' : 'Belum diatur',
+                            style: GoogleFonts.inter(
+                              color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => setState(() => _isScanning = true),
+                      onPressed: _isLoading ? null : () => setState(() => _isScanning = true),
                       icon: const Icon(Icons.qr_code_scanner_rounded),
                       label: const Text('Scan QRIS dari Kamera'),
                       style: OutlinedButton.styleFrom(
@@ -228,32 +254,22 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveQris,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : Text(
-                        'Simpan Pengaturan',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  if (_qrisController.text.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: _isLoading ? null : _deleteQris,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Hapus QRIS'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: AppTheme.danger,
+                        ),
                       ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
