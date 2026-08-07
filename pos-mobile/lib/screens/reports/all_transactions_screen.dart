@@ -14,8 +14,9 @@ import '../pos/widgets/receipt_dialog.dart';
 class AllTransactionsScreen extends StatefulWidget {
   final String timeline;
   final bool canVoid;
+  final bool isOwner;
 
-  const AllTransactionsScreen({super.key, required this.timeline, this.canVoid = false});
+  const AllTransactionsScreen({super.key, required this.timeline, this.canVoid = false, this.isOwner = false});
 
   @override
   State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
@@ -129,7 +130,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       storeName: 'UMKM BHAYANGKARI',
                       location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                       canVoid: widget.canVoid,
-                      isOwner: user?.isOwner ?? false,
+                      isOwner: widget.isOwner,
                     ),
                   );
                 },

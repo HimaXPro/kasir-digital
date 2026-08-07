@@ -416,7 +416,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 storeName: 'UMKM BHAYANGKARI',
                                 location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                                 canVoid: true,
-                                isOwner: user?.isOwner ?? false,
+                                isOwner: true,
                               ),
                             );
                           },
@@ -500,6 +500,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   builder: (_) => AllTransactionsScreen(
                                     timeline: _timeline,
                                     canVoid: true,
+                                    isOwner: true,
                                   ),
                                 ));
                               },

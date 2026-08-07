@@ -512,6 +512,7 @@ class _PosScreenState extends State<PosScreen> {
                   builder: (context) => AllTransactionsScreen(
                     timeline: 'daily',
                     canVoid: widget.activeRole == 'owner' || widget.activeRole == 'manager',
+                    isOwner: widget.activeRole == 'owner',
                   ),
                 ),
               );

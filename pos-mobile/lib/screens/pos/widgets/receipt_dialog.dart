@@ -361,64 +361,70 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
 
   Future<void> _handleVoid(BuildContext context) async {
     final reasonCtrl = TextEditingController();
+    String? errorMsg;
+    
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        scrollable: true,
-        title: Text('Batalkan Transaksi?', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.danger)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Pendapatan akan dikurangi dan stok barang akan dikembalikan. Proses ini tidak dapat dibatalkan.', 
-                style: GoogleFonts.inter(fontSize: 13)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Alasan Pembatalan (Wajib)',
-                border: OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          scrollable: true,
+          title: Text('Batalkan Transaksi?', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.danger)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Pendapatan akan dikurangi dan stok barang akan dikembalikan. Proses ini tidak dapat dibatalkan.', 
+                  style: GoogleFonts.inter(fontSize: 13)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Alasan Pembatalan (Wajib)',
+                  border: const OutlineInputBorder(),
+                  errorText: errorMsg,
+                ),
+                maxLines: 2,
+                onChanged: (_) {
+                  if (errorMsg != null) setState(() => errorMsg = null);
+                },
               ),
-              maxLines: 2,
+            ],
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      if (reasonCtrl.text.trim().isEmpty) {
+                        setState(() => errorMsg = 'Alasan pembatalan harus diisi');
+                        return;
+                      }
+                      Navigator.pop(ctx, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.danger,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Batalkan Transaksi', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text('Kembali', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppTheme.textMuted)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    if (reasonCtrl.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(ctx)..clearSnackBars()..showSnackBar(
-                        const SnackBar(content: Text('Alasan pembatalan harus diisi'), backgroundColor: AppTheme.danger),
-                      );
-                      return;
-                    }
-                    Navigator.pop(ctx, true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.danger,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text('Batalkan Transaksi', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text('Kembali', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppTheme.textMuted)),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
 
