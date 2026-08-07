@@ -71,8 +71,6 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                         ),
                       ),
                     // Header
-                    Image.asset('assets/images/logo_bhayangkari.jpg', height: 48),
-                    const SizedBox(height: 8),
                     Text(
                       widget.storeName.toUpperCase(),
                       style: GoogleFonts.ibmPlexMono(
@@ -281,6 +279,7 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                                 'payment_method': t.paymentMethod,
                                 'customer_name': t.customerName,
                                 'cashier_name': t.cashierName,
+                                'location': widget.location,
                                 'order_note': t.orderNote,
                                 'subtotal': t.items?.fold<num>(0, (sum, i) => sum + i.subtotal).toInt() ?? 0,
                                 'discount': 0,

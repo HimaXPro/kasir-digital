@@ -43,17 +43,10 @@ class PrintService {
 
     bluetooth.printNewLine();
     
-    // Print Logo (menggunakan gambar yang sudah di-resize & hitam-putih agar aman)
-    try {
-      ByteData bytesAsset = await rootBundle.load("assets/images/logo_print.jpg");
-      Uint8List imageBytes = bytesAsset.buffer.asUint8List(bytesAsset.offsetInBytes, bytesAsset.lengthInBytes);
-      bluetooth.printImageBytes(imageBytes);
-      bluetooth.printNewLine();
-    } catch (e) {
-      // Ignore if image fails to load or print
-    }
-
     bluetooth.printCustom("UMKM BHAYANGKARI", 2, 1);
+    if (transactionData['location'] != null && transactionData['location'].toString().isNotEmpty) {
+      bluetooth.printCustom(transactionData['location'].toString(), 0, 1);
+    }
     bluetooth.printCustom("-------------------------------", 0, 1);
     
     bluetooth.printLeftRight("No:", transactionData['invoice_number'] ?? '-', 0);

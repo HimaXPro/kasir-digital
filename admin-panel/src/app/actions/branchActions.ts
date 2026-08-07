@@ -112,17 +112,8 @@ export async function deleteBranch(branchId: string, uid: string) {
     // 3. Delete from branches collection
     await adminDb.collection('branches').doc(branchId).delete();
 
-    // 4. Delete the store_pins document to clean up (optional but good for cleanup)
-    await adminDb
-      .collection('stores')
-      .doc(branchId)
-      .collection('settings')
-      .doc('store_pins')
-      .delete();
-
-    // Note: Deleting a document does not delete its subcollections in Firestore, 
-    // but the 'store_pins' is the only subcollection we created here. 
-    // Actual transactions won't be deleted, preserving historical data!
+    // 4. Delete the entire store document and ALL of its subcollections (products, transactions, settings)
+    await adminDb.recursiveDelete(adminDb.collection('stores').doc(branchId));
 
     return { success: true };
   } catch (error: any) {

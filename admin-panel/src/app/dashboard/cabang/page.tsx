@@ -463,7 +463,7 @@ export default function CabangPage() {
                 <input 
                   type="email" className="input-field" required 
                   placeholder="misal: kasir.sudirman@toko.com"
-                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value.toLowerCase()})} 
                 />
               </div>
 
@@ -511,7 +511,7 @@ export default function CabangPage() {
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Email Login (Aplikasi Kasir)</label>
                 <input 
                   type="email" className="input-field" required 
-                  value={editData.email} onChange={(e) => setEditData({...editData, email: e.target.value})} 
+                  value={editData.email} onChange={(e) => setEditData({...editData, email: e.target.value.toLowerCase()})} 
                 />
               </div>
 

@@ -5,7 +5,7 @@ import { collection, getCountFromServer } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export default function DashboardSummary() {
-  const [metrics, setMetrics] = useState({ branches: 0, trx: 0 });
+  const [metrics, setMetrics] = useState({ branches: 0, sysStatus: 'Memuat...' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,12 +15,9 @@ export default function DashboardSummary() {
         const branchSnap = await getCountFromServer(collection(db, 'branches'));
         const totalBranches = branchSnap.data().count;
 
-        // Mock transaksi untuk demo
-        const todayTrx = totalBranches * 42; 
-
         setMetrics({
           branches: totalBranches,
-          trx: todayTrx
+          sysStatus: 'Superadmin Pro'
         });
       } catch (err) {
         console.error("Gagal memuat metrik:", err);
@@ -48,8 +45,8 @@ export default function DashboardSummary() {
         </div>
         
         <div className="card">
-          <h3 style={{color: 'var(--text-muted)', fontSize: '14px', marginBottom: '8px'}}>Estimasi Transaksi</h3>
-          <p style={{fontSize: '32px', fontWeight: 'bold', color: 'var(--accent)'}}>{metrics.trx}</p>
+          <h3 style={{color: 'var(--text-muted)', fontSize: '14px', marginBottom: '8px'}}>Lisensi Sistem</h3>
+          <p style={{fontSize: '28px', fontWeight: 'bold', color: 'var(--accent, #6366f1)'}}>{metrics.sysStatus}</p>
         </div>
 
       </div>
