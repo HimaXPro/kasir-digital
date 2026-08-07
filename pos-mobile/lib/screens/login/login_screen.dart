@@ -517,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen>
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   return Text(
-                                    'v${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                                    'v${snapshot.data!.version}',
                                     style: GoogleFonts.inter(
                                       color: const Color(0xFF475569),
                                       fontSize: 11,

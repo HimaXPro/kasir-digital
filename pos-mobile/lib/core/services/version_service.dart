@@ -59,6 +59,12 @@ class VersionService {
     });
   }
 
+  static Future<AppConfigModel?> getAppConfig() async {
+    final snap = await _db.collection('settings').doc('app_config').get();
+    if (!snap.exists || snap.data() == null) return null;
+    return AppConfigModel.fromMap(snap.data()!);
+  }
+
   static Future<VersionInfo> checkUpdate() async {
     try {
       final snapshot = await _db.collection('settings').doc('app_config').get();

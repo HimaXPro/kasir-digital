@@ -10,6 +10,7 @@ import '../../models/transaction.dart' as tr;
 
 import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/version_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback? onBukaKasirTap;
@@ -101,6 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _buildPageHeader(),
               const SizedBox(height: 16),
+              _buildMaintenanceAlert(),
               _buildNegativeStockAlert(),
               _buildKpiGrid(kpi),
               const SizedBox(height: 16),
@@ -118,6 +120,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMaintenanceAlert() {
+    return StreamBuilder<AppConfigModel?>(
+      stream: VersionService.streamAppConfig(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox();
+        final config = snapshot.data!;
+        
+        if (config.isScheduled && config.maintenanceStart != null && config.maintenanceEnd != null) {
+          try {
+            final now = DateTime.now();
+            final start = DateTime.parse(config.maintenanceStart!);
+            final end = DateTime.parse(config.maintenanceEnd!);
+            
+            if (now.isBefore(start) && now.isBefore(end)) {
+              final formatStart = DateFormat('dd MMM HH:mm').format(start);
+              final formatEnd = DateFormat('HH:mm').format(end);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF9C3),
+                  border: Border.all(color: const Color(0xFFFDE047)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Color(0xFFCA8A04), size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'INFO: Maintenance Terjadwal',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF854D0E),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Aplikasi akan terkunci otomatis pada $formatStart hingga $formatEnd.',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFA16207),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          } catch (e) {
+            // ignore parse error
+          }
+        }
+        return const SizedBox();
+      },
     );
   }
 

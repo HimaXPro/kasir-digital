@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -29,6 +29,9 @@ export default function PengaturanPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  
+  const startRef = useRef<HTMLInputElement>(null);
+  const endRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function loadConfig() {
@@ -207,9 +210,14 @@ export default function PengaturanPage() {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Waktu Mulai</label>
                   <input 
+                    ref={startRef}
                     type="datetime-local"
                     className="input-field"
+                    style={{ cursor: 'pointer' }}
                     value={config.maintenance_start}
+                    onClick={() => {
+                      try { startRef.current?.showPicker(); } catch (e) {}
+                    }}
                     onChange={(e) => setConfig({...config, maintenance_start: e.target.value})}
                     required={config.is_scheduled}
                   />
@@ -217,9 +225,14 @@ export default function PengaturanPage() {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Waktu Selesai</label>
                   <input 
+                    ref={endRef}
                     type="datetime-local"
                     className="input-field"
+                    style={{ cursor: 'pointer' }}
                     value={config.maintenance_end}
+                    onClick={() => {
+                      try { endRef.current?.showPicker(); } catch (e) {}
+                    }}
                     onChange={(e) => setConfig({...config, maintenance_end: e.target.value})}
                     required={config.is_scheduled}
                   />

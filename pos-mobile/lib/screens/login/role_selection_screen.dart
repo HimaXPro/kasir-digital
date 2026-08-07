@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/app_user.dart';
+import '../../core/services/version_service.dart';
 import 'subscription_lock_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart' as my_auth;
@@ -544,7 +548,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   return Text(
-                                    'v${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                                    'v${snapshot.data!.version}',
                                     style: GoogleFonts.inter(
                                       color: Colors.white54,
                                       fontSize: 10,
