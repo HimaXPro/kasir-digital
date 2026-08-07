@@ -31,6 +31,13 @@ class FirebaseService {
     return await snapshot.ref.getDownloadURL();
   }
 
+  // === QRIS CONFIG ===
+  Future<void> saveQrisBaseString(String qrisString) async {
+    await _db.collection('users').doc(user.uid).update({
+      'qris_base_string': qrisString,
+    });
+  }
+
   // === CATEGORIES ===
   Stream<List<Category>> streamCategories() {
     return _storeRef('categories').snapshots().map((snapshot) {

@@ -227,11 +227,15 @@ class _PosScreenState extends State<PosScreen> {
       
       if (method == 'qris') {
         if (!mounted) return;
+        
+        final user = context.read<AuthProvider>().currentUser;
+        
         // Tampilkan loading dialog atau ubah state
         final paymentService = PaymentService();
         final qrisResult = await paymentService.generateQris(
           transactionId: addedTrx.id,
           amount: _subtotal - discount,
+          qrisBaseString: user?.qrisBaseString,
           items: _cart.map((e) => {
             'product_name': e.productName,
             'quantity': e.quantity,

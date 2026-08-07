@@ -9,6 +9,7 @@ class AppUser {
   final String? cityId;
   final String subscriptionStatus;
   final DateTime? trialExpiresAt;
+  final String? qrisBaseString;
 
   AppUser({
     required this.uid,
@@ -21,6 +22,7 @@ class AppUser {
     this.cityId,
     this.subscriptionStatus = 'active',
     this.trialExpiresAt,
+    this.qrisBaseString,
   });
 
   factory AppUser.fromFirestore(Map<String, dynamic> data, String documentId) {
@@ -37,6 +39,7 @@ class AppUser {
       trialExpiresAt: (data['trial_expires_at'] != null && data['trial_expires_at'].toString().isNotEmpty) 
           ? DateTime.tryParse(data['trial_expires_at'].toString()) 
           : null,
+      qrisBaseString: data['qris_base_string'],
     );
   }
 
@@ -51,6 +54,7 @@ class AppUser {
       if (cityId != null) 'cityId': cityId,
       'subscription_status': subscriptionStatus,
       'trial_expires_at': trialExpiresAt?.toIso8601String(),
+      if (qrisBaseString != null) 'qris_base_string': qrisBaseString,
     };
   }
 
