@@ -34,7 +34,9 @@ class AppUser {
       provinceId: data['provinceId'],
       cityId: data['cityId'],
       subscriptionStatus: data['subscription_status'] ?? 'active',
-      trialExpiresAt: data['trial_expires_at'] != null ? DateTime.parse(data['trial_expires_at']) : null,
+      trialExpiresAt: (data['trial_expires_at'] != null && data['trial_expires_at'].toString().isNotEmpty) 
+          ? DateTime.tryParse(data['trial_expires_at'].toString()) 
+          : null,
     );
   }
 

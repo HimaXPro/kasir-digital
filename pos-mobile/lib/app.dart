@@ -7,6 +7,9 @@ import 'screens/login/subscription_lock_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'core/providers/auth_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'core/services/version_service.dart';
 
 class KasirDigitalApp extends StatelessWidget {
   const KasirDigitalApp({super.key});
@@ -22,8 +25,98 @@ class KasirDigitalApp extends StatelessWidget {
   }
 }
 
-class _AppEntry extends StatelessWidget {
+class _AppEntry extends StatefulWidget {
   const _AppEntry();
+
+  @override
+  State<_AppEntry> createState() => _AppEntryState();
+}
+
+class _AppEntryState extends State<_AppEntry> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkUpdate();
+    });
+  }
+
+  Future<void> _checkUpdate() async {
+    final versionInfo = await VersionService.checkUpdate();
+    if (!mounted) return;
+
+    if (versionInfo.status == UpdateStatus.forceUpdate) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => WillPopScope(
+          onWillPop: () async => false, // Prevent back button
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Update Diperlukan!',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Text(
+              'Versi aplikasi Anda sudah usang dan tidak bisa digunakan lagi. Silakan update ke versi terbaru.',
+              style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () async {
+                  final url = Uri.parse(versionInfo.updateUrl);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Update Sekarang', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (versionInfo.status == UpdateStatus.optionalUpdate) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Update Tersedia',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Versi terbaru aplikasi Kasir Digital sudah tersedia. Update sekarang untuk menikmati fitur baru!',
+            style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Nanti Saja', style: GoogleFonts.inter(color: const Color(0xFF94A3B8))),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final url = Uri.parse(versionInfo.updateUrl);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Update', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

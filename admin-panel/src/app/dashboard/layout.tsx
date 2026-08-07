@@ -80,6 +80,10 @@ export default function DashboardLayout({
             <span className={styles.icon}>🏬</span>
             Manajemen Cabang
           </Link>
+          <Link href="/dashboard/pengaturan" className={styles.navItem} onClick={() => setIsMobileMenuOpen(false)}>
+            <span className={styles.icon}>⚙️</span>
+            Pengaturan Aplikasi
+          </Link>
         </nav>
         
         <div className={styles.logoutBtn} style={{ paddingBottom: '24px' }}>

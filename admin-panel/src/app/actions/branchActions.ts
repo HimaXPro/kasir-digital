@@ -37,7 +37,7 @@ export async function createBranchAccount(data: {
         provinceId: data.provinceId,
         cityId: data.cityId,
         subscription_status: data.subscription_status || 'trial',
-        trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? '' : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
+        trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
         createdAt: new Date().toISOString(),
       });
     }
@@ -51,7 +51,7 @@ export async function createBranchAccount(data: {
       uid: uid,
       isActive: true,
       subscription_status: data.subscription_status || 'trial',
-      trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? '' : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
+      trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
       createdAt: new Date().toISOString(),
     });
 
