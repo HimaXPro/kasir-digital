@@ -231,6 +231,18 @@ class FirebaseService {
     }
   }
 
+  Future<void> deleteTransaction(tr.Transaction transaction) async {
+    // Return stock if it wasn't already voided to prevent permanent stock loss
+    if (transaction.status != 'voided') {
+      for (var item in transaction.items ?? []) {
+        final productRef = _storeRef('products').doc(item.productId);
+        productRef.update({'stock': FieldValue.increment(item.quantity)});
+      }
+    }
+    
+    await _storeRef('transactions').doc(transaction.id).delete();
+  }
+
   Stream<List<StockMovement>> streamStockMovements({String timeline = 'monthly'}) {
     final now = DateTime.now();
     DateTime startDate;

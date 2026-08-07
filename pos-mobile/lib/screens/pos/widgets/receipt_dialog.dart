@@ -333,6 +333,21 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                       ),
                     ),
                   ],
+                  if (context.read<AuthProvider>().currentUser?.isOwner == true) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: () => _handleDelete(context),
+                        icon: const Icon(Icons.delete_forever, size: 16),
+                        label: Text('Hapus Permanen', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.danger,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -421,6 +436,49 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           SnackBar(content: Text('Gagal: ${e.toString()}'), backgroundColor: AppTheme.danger),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Hapus Permanen?', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.danger)),
+        content: Text('Faktur ini akan dihapus seutuhnya dari sistem dan stok akan dikembalikan (kecuali jika sudah dibatalkan sebelumnya). Tindakan ini tidak dapat diurungkan.', 
+            style: GoogleFonts.inter(fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            child: Text('Hapus', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      try {
+        final user = context.read<AuthProvider>().currentUser;
+        if (user != null) {
+          final fb = FirebaseService(user);
+          await fb.deleteTransaction(widget.transaction);
+          if (!context.mounted) return;
+          Navigator.pop(context); // Close receipt dialog
+          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
+            const SnackBar(content: Text('Transaksi berhasil dihapus permanen'), backgroundColor: AppTheme.success),
+          );
+        }
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
+          SnackBar(content: Text('Gagal menghapus: ${e.toString()}'), backgroundColor: AppTheme.danger),
         );
       }
     }
