@@ -86,6 +86,19 @@ class FirebaseService {
         snapshot.docs.map((doc) => Product.fromFirestore(doc.data(), doc.id)).toList());
   }
 
+  Future<List<Product>> getProductsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final List<Product> result = [];
+    for (var i = 0; i < ids.length; i += 10) {
+      final chunk = ids.sublist(i, i + 10 > ids.length ? ids.length : i + 10);
+      final snapshot = await _storeRef('products')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      result.addAll(snapshot.docs.map((doc) => Product.fromFirestore(doc.data(), doc.id)));
+    }
+    return result;
+  }
+
   Future<void> addProduct(Product product) async {
     final ref = await _storeRef('products').add(product.toFirestore());
     if (product.stock > 0) {

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PaymentService {
   // Hitung CRC16-CCITT (0x1021, initial 0xFFFF)
-  String _calculateCrc16(String payload) {
+  static String calculateCrc16(String payload) {
     int crc = 0xFFFF;
     for (int i = 0; i < payload.length; i++) {
       crc ^= payload.codeUnitAt(i) << 8;
@@ -16,6 +16,32 @@ class PaymentService {
       }
     }
     return crc.toRadixString(16).toUpperCase().padLeft(4, '0');
+  }
+
+  static bool validateQris(String qris) {
+    if (!qris.startsWith('000201')) return false;
+    if (qris.length < 8) return false;
+    String payload = qris.substring(0, qris.length - 4);
+    String expectedCrc = qris.substring(qris.length - 4).toUpperCase();
+    return calculateCrc16(payload) == expectedCrc;
+  }
+
+  static String extractMerchantName(String qris) {
+    try {
+      int i = 0;
+      while (i < qris.length - 4) {
+        String tag = qris.substring(i, i + 2);
+        int length = int.parse(qris.substring(i + 2, i + 4));
+        String value = qris.substring(i + 4, i + 4 + length);
+        if (tag == '59') {
+          return value;
+        }
+        i = i + 4 + length;
+      }
+    } catch (e) {
+      // Ignore parse errors, just return default
+    }
+    return 'Nama Toko Tidak Ditemukan';
   }
 
   // Generate QRIS dengan menyisipkan Tag 54 (Nominal)
@@ -53,7 +79,7 @@ class PaymentService {
     qrisBaru += "6304";
 
     // 4. Hitung ulang CRC
-    String newCrc = _calculateCrc16(qrisBaru);
+    String newCrc = calculateCrc16(qrisBaru);
 
     // 5. Gabungkan
     return qrisBaru + newCrc;

@@ -11,6 +11,7 @@ class CartScreen extends StatefulWidget {
   final void Function(String, int) onUpdateQty;
   final void Function(String, String) onUpdateItemNote;
   final void Function(double) onCheckout;
+  final VoidCallback onClearCart;
 
   const CartScreen({
     super.key,
@@ -19,6 +20,7 @@ class CartScreen extends StatefulWidget {
     required this.onUpdateQty,
     required this.onUpdateItemNote,
     required this.onCheckout,
+    required this.onClearCart,
   });
 
   @override
@@ -123,6 +125,35 @@ class _CartScreenState extends State<CartScreen> {
                     fontWeight: FontWeight.w700),
               ),
             ),
+            if (widget.cart.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.delete_sweep, color: AppTheme.danger),
+                tooltip: 'Hapus Semua',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text('Hapus Keranjang', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      content: const Text('Anda yakin ingin menghapus semua produk di keranjang?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Batal'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            widget.onClearCart();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Hapus Semua', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -342,7 +373,7 @@ class _CartScreenState extends State<CartScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () => widget.onCheckout(_discount),
+                      onPressed: widget.cart.isEmpty ? null : () => widget.onCheckout(_discount),
                       icon: const Icon(Icons.payment_rounded, size: 20),
                       label: Text('Lanjut Pembayaran',
                           style: GoogleFonts.inter(

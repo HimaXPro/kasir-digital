@@ -180,22 +180,70 @@ class _PosScreenState extends State<PosScreen> {
             if (idx >= 0) _cart[idx].note = note;
           },
           onCheckout: _openPayment,
+          onClearCart: () {
+            setState(() {
+              _cart.clear();
+            });
+          },
         ),
       ),
     ).then((_) => setState(() {}));
   }
 
-  void _openPayment(double discount) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PaymentScreen(
-          subtotal: _subtotal,
-          discount: discount,
-          onPay: _processPayment,
-        ),
-      ),
+  Future<void> _openPayment(double discount) async {
+    showDialog(
+      context: context, 
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator())
     );
+
+    try {
+      final ids = _cart.map((c) => c.productId).toList();
+      final products = await _fb.getProductsByIds(ids);
+      
+      String? outOfStockMsg;
+      for (var item in _cart) {
+        final dbProduct = products.firstWhere(
+          (p) => p.id == item.productId, 
+          orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
+        );
+        if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
+          outOfStockMsg = 'Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
+          break;
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      if (outOfStockMsg != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(outOfStockMsg), 
+          backgroundColor: AppTheme.danger,
+          duration: const Duration(seconds: 4),
+        ));
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentScreen(
+            subtotal: _subtotal,
+            discount: discount,
+            onPay: _processPayment,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Gagal mengecek stok: $e'),
+          backgroundColor: AppTheme.danger,
+        ));
+      }
+    }
   }
 
   Future<void> _processPayment(

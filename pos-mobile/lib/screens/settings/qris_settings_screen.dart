@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/firebase_service.dart';
+import '../../core/services/payment_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class QrisSettingsScreen extends StatefulWidget {
@@ -38,9 +40,9 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
 
-    if (!qris.startsWith('000201')) {
+    if (!PaymentService.validateQris(qris)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format QRIS tidak valid. Harus berawalan 000201...')),
+        const SnackBar(content: Text('Format QRIS tidak valid atau merupakan QRIS palsu!')),
       );
       return;
     }
@@ -201,27 +203,56 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: _qrisController.text.isNotEmpty ? AppTheme.successLight : AppTheme.dangerLight,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Icon(
-                          _qrisController.text.isNotEmpty ? Icons.check_circle : Icons.cancel,
-                          color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _qrisController.text.isNotEmpty ? 'Tersimpan (Aktif)' : 'Belum diatur',
-                            style: GoogleFonts.inter(
-                              color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
-                              fontWeight: FontWeight.w600,
+                        if (_qrisController.text.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: QrImageView(
+                              data: _qrisController.text,
+                              version: QrVersions.auto,
+                              size: 150,
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          Text(
+                            PaymentService.extractMerchantName(_qrisController.text),
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _qrisController.text.isNotEmpty ? Icons.check_circle : Icons.cancel,
+                              color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _qrisController.text.isNotEmpty ? 'Tersimpan (Aktif)' : 'Belum diatur',
+                              style: GoogleFonts.inter(
+                                color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
