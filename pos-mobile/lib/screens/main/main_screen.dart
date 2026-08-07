@@ -213,10 +213,13 @@ class _MainScreenState extends State<MainScreen> {
     screens.add(PosScreen(activeRole: widget.activeRole));
     navItems.add(const _NavItem(icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale, label: 'Kasir'));
 
-    // 3. Products (Manager & Owner)
+    // 3. Products & Categories (Manager & Owner)
     if (isManager) {
       screens.add(const ProductsScreen());
       navItems.add(const _NavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: 'Produk'));
+      
+      screens.add(const CategoriesScreen());
+      navItems.add(const _NavItem(icon: Icons.category_outlined, activeIcon: Icons.category, label: 'Kategori'));
     }
 
     // 4. Reports (Owner only)
@@ -285,12 +288,15 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Text(
-                          item.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                            color: isActive ? AppTheme.primary : AppTheme.textMuted,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            item.label,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                              color: isActive ? AppTheme.primary : AppTheme.textMuted,
+                            ),
                           ),
                         ),
                       ],
@@ -386,20 +392,7 @@ class _MainScreenState extends State<MainScreen> {
                       isActive: isActive,
                     );
                   }),
-                  if (user.isManager || user.isOwner) ...[
-                    _drawerLabel('MASTER DATA'),
-                    _drawerItemNav(
-                      Icons.category_outlined,
-                      'Kategori',
-                      () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CategoriesScreen()),
-                        );
-                      },
-                    ),
-                  ],
+                  // Master data (Kategori & Produk) is now in the main navItems above
                   _drawerLabel('PENGATURAN'),
                   _drawerItemNav(
                     Icons.print_outlined,
