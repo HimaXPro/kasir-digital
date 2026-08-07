@@ -8,6 +8,8 @@ export async function createBranchAccount(data: {
   name: string;
   provinceId: string;
   cityId: string;
+  subscription_status?: 'trial' | 'active';
+  trial_expires_at?: string;
 }) {
   try {
     // Generate a unique branchId to prevent branches in the same city from overwriting each other
@@ -34,8 +36,8 @@ export async function createBranchAccount(data: {
         store_name: data.name,
         provinceId: data.provinceId,
         cityId: data.cityId,
-        subscription_status: 'trial',
-        trial_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        subscription_status: data.subscription_status || 'trial',
+        trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? '' : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
         createdAt: new Date().toISOString(),
       });
     }
@@ -48,8 +50,8 @@ export async function createBranchAccount(data: {
       cityId: data.cityId,
       uid: uid,
       isActive: true,
-      subscription_status: 'trial',
-      trial_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      subscription_status: data.subscription_status || 'trial',
+      trial_expires_at: data.trial_expires_at || (data.subscription_status === 'active' ? '' : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
       createdAt: new Date().toISOString(),
     });
 

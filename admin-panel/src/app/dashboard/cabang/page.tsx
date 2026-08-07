@@ -95,6 +95,8 @@ export default function CabangPage() {
     provinceName: '',
     cityId: '',
     cityName: '',
+    subscription_status: 'trial' as 'trial' | 'active',
+    trial_expires_at: '',
   });
 
   const [editData, setEditData] = useState({
@@ -164,12 +166,14 @@ export default function CabangPage() {
       password: formData.password,
       provinceId: finalProvinceId,
       cityId: finalCityId,
+      subscription_status: formData.subscription_status,
+      trial_expires_at: formData.trial_expires_at,
     });
     setIsSubmitting(false);
 
     if (res.success) {
       setIsModalOpen(false);
-      setFormData({ name: '', email: '', password: '', provinceId: '', provinceName: '', cityId: '', cityName: '' });
+      setFormData({ name: '', email: '', password: '', provinceId: '', provinceName: '', cityId: '', cityName: '', subscription_status: 'trial', trial_expires_at: '' });
     } else {
       alert('Gagal mendaftar: ' + res.error);
     }
@@ -474,6 +478,42 @@ export default function CabangPage() {
                   placeholder="Minimal 6 karakter"
                   value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} 
                 />
+              </div>
+              
+              <div style={{ padding: '16px', background: 'var(--surface-hover)', borderRadius: '8px', marginTop: '8px' }}>
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '13px'}}>Status Langganan</label>
+                <select 
+                  className="input-field"
+                  value={formData.subscription_status}
+                  onChange={(e) => setFormData({...formData, subscription_status: e.target.value as 'trial'|'active'})}
+                  style={{ marginBottom: formData.subscription_status === 'trial' ? '12px' : '0' }}
+                >
+                  <option value="trial">Trial (Batas Waktu)</option>
+                  <option value="active">Active (Pro / Tanpa Batas)</option>
+                </select>
+                
+                {formData.subscription_status === 'trial' && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px'}}>Batas Waktu Trial</label>
+                    <input 
+                      type="datetime-local" 
+                      className="input-field" 
+                      style={{ fontSize: '13px', padding: '8px', cursor: 'pointer' }}
+                      onClick={(e) => {
+                        try {
+                          (e.target as HTMLInputElement).showPicker();
+                        } catch (err) {} 
+                      }}
+                      value={formData.trial_expires_at ? new Date(formData.trial_expires_at).toLocaleString('sv-SE', { timeZoneName: 'short' }).substring(0, 16).replace(' ', 'T') : ''} 
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const date = new Date(e.target.value);
+                          setFormData({...formData, trial_expires_at: date.toISOString()});
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
