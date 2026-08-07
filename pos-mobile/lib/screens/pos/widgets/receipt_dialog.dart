@@ -14,6 +14,7 @@ class ReceiptDialog extends StatefulWidget {
   final String storeName;
   final String location;
   final bool canVoid;
+  final bool isOwner;
 
   const ReceiptDialog({
     super.key,
@@ -21,6 +22,7 @@ class ReceiptDialog extends StatefulWidget {
     required this.storeName,
     required this.location,
     this.canVoid = false,
+    this.isOwner = false,
   });
 
   @override
@@ -333,7 +335,7 @@ class _ReceiptDialogState extends State<ReceiptDialog> {
                       ),
                     ),
                   ],
-                  if (context.read<AuthProvider>().currentUser?.isOwner == true) ...[
+                  if (widget.isOwner) ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,

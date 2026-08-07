@@ -129,6 +129,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       storeName: 'UMKM BHAYANGKARI',
                       location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
                       canVoid: widget.canVoid,
+                      isOwner: user?.isOwner ?? false,
                     ),
                   );
                 },
