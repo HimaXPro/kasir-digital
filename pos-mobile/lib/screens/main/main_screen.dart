@@ -13,6 +13,7 @@ import '../products/products_screen.dart';
 import '../categories/categories_screen.dart';
 import '../reports/reports_screen.dart';
 import '../settings/printer_settings_screen.dart';
+import '../settings/qris_settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final String activeRole;
