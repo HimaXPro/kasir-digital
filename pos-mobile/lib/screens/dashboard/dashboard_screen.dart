@@ -21,7 +21,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
+
   late Stream<Map<String, dynamic>> _dashboardStream;
   late Stream<List<Product>> _productsStream;
 
