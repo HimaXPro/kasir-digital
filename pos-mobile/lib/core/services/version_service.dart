@@ -14,8 +14,50 @@ class VersionInfo {
   VersionInfo(this.status, this.updateUrl);
 }
 
+class AppConfigModel {
+  final int minVersion;
+  final int latestVersion;
+  final String updateUrl;
+  final bool isMaintenance;
+  final String maintenanceMessage;
+  final bool isScheduled;
+  final String? maintenanceStart;
+  final String? maintenanceEnd;
+
+  AppConfigModel({
+    required this.minVersion,
+    required this.latestVersion,
+    required this.updateUrl,
+    required this.isMaintenance,
+    required this.maintenanceMessage,
+    required this.isScheduled,
+    this.maintenanceStart,
+    this.maintenanceEnd,
+  });
+
+  factory AppConfigModel.fromMap(Map<String, dynamic> data) {
+    return AppConfigModel(
+      minVersion: data['minimum_version'] ?? 1,
+      latestVersion: data['latest_version'] ?? 1,
+      updateUrl: data['update_url'] ?? '',
+      isMaintenance: data['is_maintenance'] ?? false,
+      maintenanceMessage: data['maintenance_message'] ?? 'Sistem sedang dalam perbaikan.',
+      isScheduled: data['is_scheduled'] ?? false,
+      maintenanceStart: data['maintenance_start'],
+      maintenanceEnd: data['maintenance_end'],
+    );
+  }
+}
+
 class VersionService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  static Stream<AppConfigModel?> streamAppConfig() {
+    return _db.collection('settings').doc('app_config').snapshots().map((snap) {
+      if (!snap.exists || snap.data() == null) return null;
+      return AppConfigModel.fromMap(snap.data()!);
+    });
+  }
 
   static Future<VersionInfo> checkUpdate() async {
     try {

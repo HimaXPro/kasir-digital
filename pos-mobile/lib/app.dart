@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/login/login_screen.dart';
@@ -9,9 +10,48 @@ import 'core/providers/auth_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'core/services/version_service.dart';
+import 'screens/login/maintenance_screen.dart';
 
-class KasirDigitalApp extends StatelessWidget {
+class KasirDigitalApp extends StatefulWidget {
   const KasirDigitalApp({super.key});
+
+  @override
+  State<KasirDigitalApp> createState() => _KasirDigitalAppState();
+}
+
+class _KasirDigitalAppState extends State<KasirDigitalApp> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-evaluate scheduled maintenance every minute
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  bool _isMaintenanceActive(AppConfigModel config) {
+    if (config.isMaintenance) return true;
+    
+    if (config.isScheduled && config.maintenanceStart != null && config.maintenanceEnd != null) {
+      try {
+        final now = DateTime.now();
+        final start = DateTime.parse(config.maintenanceStart!);
+        final end = DateTime.parse(config.maintenanceEnd!);
+        return now.isAfter(start) && now.isBefore(end);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +59,17 @@ class KasirDigitalApp extends StatelessWidget {
       title: 'Kasir Digital',
       theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return StreamBuilder<AppConfigModel?>(
+          stream: VersionService.streamAppConfig(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData && _isMaintenanceActive(snapshot.data!)) {
+              return MaintenanceScreen(message: snapshot.data!.maintenanceMessage);
+            }
+            return child ?? const SizedBox();
+          },
+        );
+      },
       home: const _AppEntry(),
     );
   }
