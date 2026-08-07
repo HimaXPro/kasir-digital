@@ -359,10 +359,10 @@ class _PosScreenState extends State<PosScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Transaksi Baru'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
+                  child: const Text('Transaksi Baru'),
                 ),
               ),
             ],

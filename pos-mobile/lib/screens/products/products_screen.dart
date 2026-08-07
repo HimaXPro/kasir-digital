@@ -715,7 +715,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String?>(
-          value: value,
+          initialValue: value,
           decoration: const InputDecoration(),
           hint: Text('Pilih kategori (opsional)',
               style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),

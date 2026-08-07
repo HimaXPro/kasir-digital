@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/login/role_selection_screen.dart';
-import 'screens/main/main_screen.dart';
 import 'screens/login/subscription_lock_screen.dart';
 
 import 'package:provider/provider.dart';

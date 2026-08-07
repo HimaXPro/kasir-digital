@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
-        actions: [
+        actions: const [
           // Refresh button removed since it's real-time now
         ],
       ),
@@ -332,7 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxY > 0 ? maxY / 4 : 1,
-                  getDrawingHorizontalLine: (v) => FlLine(
+                  getDrawingHorizontalLine: (v) => const FlLine(
                     color: AppTheme.border,
                     strokeWidth: 1,
                   ),

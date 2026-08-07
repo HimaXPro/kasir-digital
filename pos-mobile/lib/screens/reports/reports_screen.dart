@@ -580,7 +580,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
-        getDrawingHorizontalLine: (v) => FlLine(color: AppTheme.border, strokeWidth: 1),
+        getDrawingHorizontalLine: (v) => const FlLine(color: AppTheme.border, strokeWidth: 1),
       ),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(

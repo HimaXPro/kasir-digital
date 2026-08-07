@@ -122,30 +122,30 @@ class AppTheme {
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
+        border: const OutlineInputBorder(
           borderRadius: radiusSm,
-          borderSide: const BorderSide(color: border),
+          borderSide: BorderSide(color: border),
         ),
-        enabledBorder: OutlineInputBorder(
+        enabledBorder: const OutlineInputBorder(
           borderRadius: radiusSm,
-          borderSide: const BorderSide(color: border),
+          borderSide: BorderSide(color: border),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder: const OutlineInputBorder(
           borderRadius: radiusSm,
-          borderSide: const BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: primary, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
+        errorBorder: const OutlineInputBorder(
           borderRadius: radiusSm,
-          borderSide: const BorderSide(color: danger),
+          borderSide: BorderSide(color: danger),
         ),
         hintStyle: GoogleFonts.inter(color: textMuted, fontSize: 13),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: const CardThemeData(
         color: cardBg,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: const BorderSide(color: border),
+          side: BorderSide(color: border),
         ),
         margin: EdgeInsets.zero,
       ),
