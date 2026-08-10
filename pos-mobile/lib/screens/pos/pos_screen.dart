@@ -28,17 +28,35 @@ class PosScreen extends StatefulWidget {
 }
 
 class _PosScreenState extends State<PosScreen> {
-  FirebaseService get _fb => FirebaseService(context.read<AuthProvider>().currentUser!);
+  FirebaseService get _fb =>
+      FirebaseService(context.read<AuthProvider>().currentUser!);
   List<tr.CartItem> _cart = [];
   String _search = '';
   String? _selectedCatId;
   final _searchCtrl = TextEditingController();
   String _attendantName = 'Kasir';
 
-  static const _emojis = ['🍜','🥤','☕','🍕','🍱','🧃','🍗','🥗','🍰','🍔','🥐','🍩'];
+  static const _emojis = [
+    '🍜',
+    '🥤',
+    '☕',
+    '🍕',
+    '🍱',
+    '🧃',
+    '🍗',
+    '🥗',
+    '🍰',
+    '🍔',
+    '🥐',
+    '🍩'
+  ];
   static const _colors = [
-    Color(0xFFEEF2FF), Color(0xFFECFEFF), Color(0xFFECFDF5),
-    Color(0xFFFFFBEB), Color(0xFFFEF2F2), Color(0xFFF5F3FF),
+    Color(0xFFEEF2FF),
+    Color(0xFFECFEFF),
+    Color(0xFFECFDF5),
+    Color(0xFFFFFBEB),
+    Color(0xFFFEF2F2),
+    Color(0xFFF5F3FF),
   ];
 
   late Stream<List<Category>> _categoriesStream;
@@ -70,7 +88,9 @@ class _PosScreenState extends State<PosScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Kasir Bertugas', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+        title: Text('Kasir Bertugas',
+            style:
+                GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
         content: TextField(
           controller: ctrl,
           decoration: const InputDecoration(
@@ -116,11 +136,14 @@ class _PosScreenState extends State<PosScreen> {
         if (_cart[idx].quantity < product.stock) {
           _cart[idx].quantity++;
         } else {
-          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-            SnackBar(
-              content: Text('Stok ${product.name} hanya ${product.stock} unit'),
-            ),
-          );
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                content:
+                    Text('Stok ${product.name} hanya ${product.stock} unit'),
+              ),
+            );
         }
       } else {
         _cart.add(tr.CartItem(
@@ -147,9 +170,13 @@ class _PosScreenState extends State<PosScreen> {
         } else {
           final pIdx = _allProducts.indexWhere((p) => p.id == productId);
           if (pIdx >= 0 && qty > _allProducts[pIdx].stock) {
-            ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-              SnackBar(content: Text('Stok hanya ${_allProducts[pIdx].stock} unit')),
-            );
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                SnackBar(
+                    content:
+                        Text('Stok hanya ${_allProducts[pIdx].stock} unit')),
+              );
             return;
           }
           _cart[idx].quantity = qty;
@@ -163,9 +190,11 @@ class _PosScreenState extends State<PosScreen> {
 
   void _openCart() {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        const SnackBar(content: Text('Keranjang masih kosong')),
-      );
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Keranjang masih kosong')),
+        );
       return;
     }
     Navigator.push(
@@ -192,26 +221,32 @@ class _PosScreenState extends State<PosScreen> {
 
   Future<void> _openPayment(double discount) async {
     showDialog(
-      context: context, 
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator())
-    );
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()));
 
     try {
       final ids = _cart.map((c) => c.productId).toList();
       final products = await _fb.getProductsByIds(ids);
-      
+
       String? outOfStockMsg;
       if (_cart.isEmpty) {
-        outOfStockMsg = 'Keranjang kosong. Produk mungkin kehabisan stok dan dihapus otomatis.';
+        outOfStockMsg =
+            'Keranjang kosong. Produk mungkin kehabisan stok dan dihapus otomatis.';
       } else {
         for (var item in _cart) {
-          final dbProduct = products.firstWhere(
-            (p) => p.id == item.productId, 
-            orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
-          );
+          final dbProduct = products.firstWhere((p) => p.id == item.productId,
+              orElse: () => Product(
+                  id: 'missing',
+                  categoryId: '',
+                  name: 'Missing',
+                  sku: 'MISSING',
+                  costPrice: 0,
+                  sellingPrice: 0,
+                  stock: 0));
           if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
-            outOfStockMsg = 'Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
+            outOfStockMsg =
+                'Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
             break;
           }
         }
@@ -221,11 +256,13 @@ class _PosScreenState extends State<PosScreen> {
       Navigator.pop(context); // Close loading
 
       if (outOfStockMsg != null) {
-        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
-          content: Text(outOfStockMsg), 
-          backgroundColor: AppTheme.danger,
-          duration: const Duration(seconds: 4),
-        ));
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text(outOfStockMsg),
+            backgroundColor: AppTheme.danger,
+            duration: const Duration(seconds: 4),
+          ));
         return;
       }
 
@@ -242,34 +279,43 @@ class _PosScreenState extends State<PosScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
-          content: Text('Gagal mengecek stok: $e'),
-          backgroundColor: AppTheme.danger,
-        ));
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Gagal mengecek stok: $e'),
+            backgroundColor: AppTheme.danger,
+          ));
       }
     }
   }
 
-  Future<void> _processPayment(
-      String method, double payAmount, double discount, String customerName, String orderNote) async {
+  Future<void> _processPayment(String method, double payAmount, double discount,
+      String customerName, String orderNote) async {
     Navigator.popUntil(context, (route) => route.isFirst);
-    
+
     // Final check before actually processing to prevent double checkout exploits
     try {
       final ids = _cart.map((c) => c.productId).toList();
       final products = await _fb.getProductsByIds(ids);
-      
+
       String? outOfStockMsg;
       if (_cart.isEmpty) {
-        outOfStockMsg = 'Transaksi dibatalkan. Keranjang menjadi kosong karena stok produk sudah habis ditarik kasir lain.';
+        outOfStockMsg =
+            'Transaksi dibatalkan. Keranjang menjadi kosong karena stok produk sudah habis ditarik kasir lain.';
       } else {
         for (var item in _cart) {
-          final dbProduct = products.firstWhere(
-            (p) => p.id == item.productId, 
-            orElse: () => Product(id: 'missing', categoryId: '', name: 'Missing', sku: 'MISSING', costPrice: 0, sellingPrice: 0, stock: 0)
-          );
+          final dbProduct = products.firstWhere((p) => p.id == item.productId,
+              orElse: () => Product(
+                  id: 'missing',
+                  categoryId: '',
+                  name: 'Missing',
+                  sku: 'MISSING',
+                  costPrice: 0,
+                  sellingPrice: 0,
+                  stock: 0));
           if (dbProduct.id == 'missing' || dbProduct.stock < item.quantity) {
-            outOfStockMsg = 'Gagal dibayar. Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
+            outOfStockMsg =
+                'Gagal dibayar. Stok ${item.productName} habis atau tidak mencukupi (Tersisa: ${dbProduct.stock}).';
             break;
           }
         }
@@ -277,20 +323,24 @@ class _PosScreenState extends State<PosScreen> {
 
       if (outOfStockMsg != null) {
         if (mounted) {
-          ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
-            content: Text(outOfStockMsg), 
-            backgroundColor: AppTheme.danger,
-            duration: const Duration(seconds: 4),
-          ));
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(
+              content: Text(outOfStockMsg),
+              backgroundColor: AppTheme.danger,
+              duration: const Duration(seconds: 4),
+            ));
         }
         return; // Abort payment
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(SnackBar(
-          content: Text('Gagal memvalidasi stok akhir: $e'),
-          backgroundColor: AppTheme.danger,
-        ));
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Gagal memvalidasi stok akhir: $e'),
+            backgroundColor: AppTheme.danger,
+          ));
       }
       return;
     }
@@ -298,8 +348,10 @@ class _PosScreenState extends State<PosScreen> {
     try {
       final now = DateTime.now();
       final invoice = 'INV-${now.millisecondsSinceEpoch}';
-      
-      final changeAmount = (payAmount - (_subtotal - discount)).clamp(0, double.infinity).toDouble();
+
+      final changeAmount = (payAmount - (_subtotal - discount))
+          .clamp(0, double.infinity)
+          .toDouble();
 
       final transaction = tr.Transaction(
         id: '',
@@ -315,26 +367,28 @@ class _PosScreenState extends State<PosScreen> {
       );
 
       final addedTrx = await _fb.addTransaction(transaction);
-      
+
       final trxData = transaction.toFirestore();
       trxData['id'] = addedTrx.id;
-      
+
       if (method == 'qris') {
         if (!mounted) return;
-        
+
         final user = context.read<AuthProvider>().currentUser;
-        
+
         // Tampilkan loading dialog atau ubah state
         final paymentService = PaymentService();
         final qrisResult = await paymentService.generateQris(
           transactionId: addedTrx.id,
           amount: _subtotal - discount,
           qrisBaseString: user?.qrisBaseString,
-          items: _cart.map((e) => {
-            'product_name': e.productName,
-            'quantity': e.quantity,
-            'price': e.price,
-          }).toList(),
+          items: _cart
+              .map((e) => {
+                    'product_name': e.productName,
+                    'quantity': e.quantity,
+                    'price': e.price,
+                  })
+              .toList(),
         );
 
         if (qrisResult['success'] == true) {
@@ -365,12 +419,15 @@ class _PosScreenState extends State<PosScreen> {
               cashierName: transaction.cashierName,
               status: transaction.status,
             );
-            await _fb.voidTransaction(trxToVoid, 'Dibatalkan kasir (QRIS batal)');
-            
+            await _fb.voidTransaction(
+                trxToVoid, 'Dibatalkan kasir (QRIS batal)');
+
             if (mounted) {
-              ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-                const SnackBar(content: Text('Pembayaran QRIS dibatalkan.')),
-              );
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(
+                  const SnackBar(content: Text('Pembayaran QRIS dibatalkan.')),
+                );
             }
             return;
           }
@@ -385,16 +442,20 @@ class _PosScreenState extends State<PosScreen> {
       _showSuccessDialog(transaction, trxData);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.danger),
-      );
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+              content: Text(e.toString()), backgroundColor: AppTheme.danger),
+        );
     }
   }
 
-  void _showSuccessDialog(tr.Transaction transaction, Map<String, dynamic> trxData) {
+  void _showSuccessDialog(
+      tr.Transaction transaction, Map<String, dynamic> trxData) {
     final invoice = trxData['invoice_number'] as String;
     final change = double.tryParse(trxData['change_amount'].toString()) ?? 0;
-    
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -405,87 +466,94 @@ class _PosScreenState extends State<PosScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: AppTheme.successLight,
-                  shape: BoxShape.circle,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.successLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded,
+                      color: AppTheme.success, size: 40),
                 ),
-                child: const Icon(Icons.check_circle_rounded,
-                    color: AppTheme.success, size: 40),
-              ),
-              const SizedBox(height: 16),
-              Text('Transaksi Berhasil!',
-                  style: GoogleFonts.inter(
-                      fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
-              Text(invoice,
-                  style: GoogleFonts.inter(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14)),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.bodyBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Kembalian',
-                        style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary, fontSize: 13)),
-                    Text(formatRupiah(change),
-                        style: GoogleFonts.inter(
-                            color: AppTheme.success,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final user = context.read<AuthProvider>().currentUser;
-                    showDialog(
-                      context: context,
-                      builder: (_) => ReceiptDialog(
-                        transaction: transaction,
-                        storeName: 'UMKM BHAYANGKARI',
-                        location: [user?.cityId?.replaceAll('_', ' '), user?.provinceId?.replaceAll('_', ' ')].where((e) => e != null && e.toString().isNotEmpty).join(' - ').toUpperCase(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.receipt_long, size: 18),
-                  label: const Text('Lihat Nota (Struk)'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    foregroundColor: AppTheme.primary,
-                    side: const BorderSide(color: AppTheme.primary),
+                const SizedBox(height: 16),
+                Text('Transaksi Berhasil!',
+                    style: GoogleFonts.inter(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text(invoice,
+                    style: GoogleFonts.inter(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14)),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bodyBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Kembalian',
+                          style: GoogleFonts.inter(
+                              color: AppTheme.textSecondary, fontSize: 13)),
+                      Text(formatRupiah(change),
+                          style: GoogleFonts.inter(
+                              color: AppTheme.success,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15)),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final user = context.read<AuthProvider>().currentUser;
+                      showDialog(
+                        context: context,
+                        builder: (_) => ReceiptDialog(
+                          transaction: transaction,
+                          storeName: 'UMKM BHAYANGKARI',
+                          location: [
+                            user?.cityId?.replaceAll('_', ' '),
+                            user?.provinceId?.replaceAll('_', ' ')
+                          ]
+                              .where(
+                                  (e) => e != null && e.toString().isNotEmpty)
+                              .join(' - ')
+                              .toUpperCase(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.receipt_long, size: 18),
+                    label: const Text('Lihat Nota (Struk)'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      foregroundColor: AppTheme.primary,
+                      side: const BorderSide(color: AppTheme.primary),
+                    ),
                   ),
-                  child: const Text('Transaksi Baru'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Transaksi Baru'),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -511,7 +579,8 @@ class _PosScreenState extends State<PosScreen> {
                 MaterialPageRoute(
                   builder: (context) => AllTransactionsScreen(
                     timeline: 'daily',
-                    canVoid: widget.activeRole == 'owner' || widget.activeRole == 'manager',
+                    canVoid: widget.activeRole == 'owner' ||
+                        widget.activeRole == 'manager',
                     isOwner: widget.activeRole == 'owner',
                   ),
                 ),
@@ -557,7 +626,8 @@ class _PosScreenState extends State<PosScreen> {
             stream: _productsStream,
             builder: (context, prodSnapshot) {
               if (prodSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+                return const Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary));
               }
 
               var products = prodSnapshot.data ?? [];
@@ -568,8 +638,10 @@ class _PosScreenState extends State<PosScreen> {
               for (var i = _cart.length - 1; i >= 0; i--) {
                 final cartItem = _cart[i];
                 try {
-                  final dbProduct = products.firstWhere((p) => p.id == cartItem.productId);
-                  if (cartItem.price != dbProduct.sellingPrice || cartItem.productName != dbProduct.name) {
+                  final dbProduct =
+                      products.firstWhere((p) => p.id == cartItem.productId);
+                  if (cartItem.price != dbProduct.sellingPrice ||
+                      cartItem.productName != dbProduct.name) {
                     cartItem.price = dbProduct.sellingPrice;
                     cartItem.productName = dbProduct.name;
                     cartItem.imageUrl = dbProduct.imageUrl;
@@ -589,7 +661,7 @@ class _PosScreenState extends State<PosScreen> {
                   cartChanged = true;
                 }
               }
-              
+
               if (cartChanged) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) setState(() {});
@@ -599,12 +671,15 @@ class _PosScreenState extends State<PosScreen> {
               // Local Filtering
               if (_search.isNotEmpty) {
                 products = products
-                    .where((p) => p.name.toLowerCase().contains(_search.toLowerCase()) || 
-                                  p.sku.toLowerCase().contains(_search.toLowerCase()))
+                    .where((p) =>
+                        p.name.toLowerCase().contains(_search.toLowerCase()) ||
+                        p.sku.toLowerCase().contains(_search.toLowerCase()))
                     .toList();
               }
               if (_selectedCatId != null) {
-                products = products.where((p) => p.categoryId == _selectedCatId).toList();
+                products = products
+                    .where((p) => p.categoryId == _selectedCatId)
+                    .toList();
               }
 
               return Column(
@@ -774,7 +849,11 @@ class _PosScreenState extends State<PosScreen> {
           if (item is String) {
             return Padding(
               padding: const EdgeInsets.only(top: 16, bottom: 8, left: 4),
-              child: Text(item, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+              child: Text(item,
+                  style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary)),
             );
           } else {
             return Padding(
@@ -897,7 +976,8 @@ class _PosScreenState extends State<PosScreen> {
             // Cart Info / Add Button
             if (isOutOfStock)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -910,14 +990,16 @@ class _PosScreenState extends State<PosScreen> {
               )
             else if (inCart)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.shopping_cart, color: Colors.white, size: 14),
+                    const Icon(Icons.shopping_cart,
+                        color: Colors.white, size: 14),
                     const SizedBox(width: 4),
                     Text('$cartQty',
                         style: GoogleFonts.inter(
@@ -943,4 +1025,4 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 }
-
+// halo
