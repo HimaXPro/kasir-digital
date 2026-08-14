@@ -405,18 +405,19 @@ class _MainScreenState extends State<MainScreen> {
                       );
                     },
                   ),
-                  _drawerItemNav(
-                    Icons.qr_code_scanner_outlined,
-                    'Pengaturan QRIS',
-                    () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const QrisSettingsScreen()),
-                      );
-                    },
-                  ),
                   if (widget.activeRole == 'owner') ...[
+                    _drawerItemNav(
+                      Icons.qr_code_scanner_outlined,
+                      'Pengaturan QRIS',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const QrisSettingsScreen()),
+                        );
+                      },
+                    ),
+
                     _drawerItemNav(
                       Icons.lock_reset_outlined,
                       'Ganti Password',
