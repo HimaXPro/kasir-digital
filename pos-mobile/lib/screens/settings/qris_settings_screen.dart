@@ -17,23 +17,12 @@ class QrisSettingsScreen extends StatefulWidget {
 }
 
 class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
-  final TextEditingController _qrisController = TextEditingController();
   bool _isLoading = false;
   bool _isScanning = false;
 
   @override
   void initState() {
     super.initState();
-    final user = context.read<AuthProvider>().currentUser;
-    if (user != null && user.qrisBaseString != null) {
-      _qrisController.text = user.qrisBaseString!;
-    }
-  }
-
-  @override
-  void dispose() {
-    _qrisController.dispose();
-    super.dispose();
   }
 
   Future<void> _saveQrisText(String qris) async {
@@ -60,9 +49,6 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       await fbService.saveQrisBaseString(qris);
       
       if (mounted) {
-        setState(() {
-          _qrisController.text = qris;
-        });
         ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           const SnackBar(content: Text('QRIS berhasil disimpan!')),
         );
@@ -88,9 +74,6 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       await fbService.saveQrisBaseString('');
       
       if (mounted) {
-        setState(() {
-          _qrisController.text = '';
-        });
         ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
           const SnackBar(content: Text('QRIS berhasil dihapus')),
         );
@@ -171,6 +154,8 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
       );
     }
 
+    final currentQris = context.watch<AuthProvider>().currentUser?.qrisBaseString ?? '';
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Pengaturan QRIS', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
@@ -213,13 +198,13 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: _qrisController.text.isNotEmpty ? AppTheme.successLight : AppTheme.dangerLight,
+                      color: currentQris.isNotEmpty ? AppTheme.successLight : AppTheme.dangerLight,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger),
+                      border: Border.all(color: currentQris.isNotEmpty ? AppTheme.success : AppTheme.danger),
                     ),
                     child: Column(
                       children: [
-                        if (_qrisController.text.isNotEmpty) ...[
+                        if (currentQris.isNotEmpty) ...[
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -227,14 +212,14 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: QrImageView(
-                              data: _qrisController.text,
+                              data: currentQris,
                               version: QrVersions.auto,
                               size: 150,
                             ),
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            PaymentService.extractMerchantName(_qrisController.text),
+                            PaymentService.extractMerchantName(currentQris),
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -248,14 +233,14 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              _qrisController.text.isNotEmpty ? Icons.check_circle : Icons.cancel,
-                              color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                              currentQris.isNotEmpty ? Icons.check_circle : Icons.cancel,
+                              color: currentQris.isNotEmpty ? AppTheme.success : AppTheme.danger,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _qrisController.text.isNotEmpty ? 'Tersimpan (Aktif)' : 'Belum diatur',
+                              currentQris.isNotEmpty ? 'Tersimpan (Aktif)' : 'Belum diatur',
                               style: GoogleFonts.inter(
-                                color: _qrisController.text.isNotEmpty ? AppTheme.success : AppTheme.danger,
+                                color: currentQris.isNotEmpty ? AppTheme.success : AppTheme.danger,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -292,7 +277,7 @@ class _QrisSettingsScreenState extends State<QrisSettingsScreen> {
                       ),
                     ),
                   ),
-                  if (_qrisController.text.isNotEmpty) ...[
+                  if (currentQris.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
