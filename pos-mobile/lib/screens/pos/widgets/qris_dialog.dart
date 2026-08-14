@@ -27,6 +27,7 @@ class QrisDialog extends StatefulWidget {
 class _QrisDialogState extends State<QrisDialog> {
   StreamSubscription? _subscription;
   String _status = 'PENDING';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -151,14 +152,14 @@ class _QrisDialogState extends State<QrisDialog> {
               // TOMBOL KONFIRMASI MANUAL (Karena belum ada integrasi webhook Payment Gateway)
               const SizedBox(height: 12),
               ElevatedButton.icon(
-                onPressed: () async {
-                  // Karena ini QRIS statis milik toko sendiri, kasir harus 
-                  // memastikan pembayaran masuk lewat M-Banking/EDC lalu menekan tombol ini.
+                onPressed: _isLoading ? null : () async {
+                  setState(() => _isLoading = true);
                   try {
                     await widget.fbService.updateTransactionStatus(widget.transactionId, 'PAID');
                     // Dialog akan otomatis tertutup oleh listener saat status berubah
                   } catch (e) {
                     if (mounted) {
+                      setState(() => _isLoading = false);
                       ScaffoldMessenger.of(context)..clearSnackBars()..showSnackBar(
                         SnackBar(content: Text('Gagal mengupdate status: $e')),
                       );
@@ -171,9 +172,13 @@ class _QrisDialogState extends State<QrisDialog> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: Text('Konfirmasi Pembayaran Selesai',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                icon: _isLoading 
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(
+                  _isLoading ? 'Memproses...' : 'Konfirmasi Pembayaran Selesai',
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)
+                ),
               )
             ],
             const SizedBox(height: 8),
