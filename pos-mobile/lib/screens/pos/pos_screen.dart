@@ -579,8 +579,7 @@ class _PosScreenState extends State<PosScreen> {
                 MaterialPageRoute(
                   builder: (context) => AllTransactionsScreen(
                     timeline: 'daily',
-                    canVoid: widget.activeRole == 'owner' ||
-                        widget.activeRole == 'manager',
+                    canVoid: widget.activeRole == 'owner',
                     isOwner: widget.activeRole == 'owner',
                   ),
                 ),
