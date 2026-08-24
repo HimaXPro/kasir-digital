@@ -298,6 +298,19 @@ class _PosScreenState extends State<PosScreen> {
       final ids = _cart.map((c) => c.productId).toList();
       final products = await _fb.getProductsByIds(ids);
 
+      if (_subtotal - discount <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(const SnackBar(
+              content: Text('Gagal dibayar. Total transaksi tidak boleh Rp 0.'),
+              backgroundColor: AppTheme.danger,
+              duration: Duration(seconds: 4),
+            ));
+        }
+        return; // Abort payment
+      }
+
       String? outOfStockMsg;
       if (_cart.isEmpty) {
         outOfStockMsg =
@@ -380,7 +393,7 @@ class _PosScreenState extends State<PosScreen> {
         final paymentService = PaymentService();
         final qrisResult = await paymentService.generateQris(
           transactionId: addedTrx.id,
-          amount: _subtotal - discount,
+          amount: transaction.grandTotal,
           qrisBaseString: user?.qrisBaseString,
           items: _cart
               .map((e) => {
@@ -399,7 +412,7 @@ class _PosScreenState extends State<PosScreen> {
             builder: (ctx) => QrisDialog(
               transactionId: addedTrx.id,
               qrString: qrisResult['qrString'],
-              amount: _subtotal - discount,
+              amount: transaction.grandTotal,
               fbService: _fb,
             ),
           );
